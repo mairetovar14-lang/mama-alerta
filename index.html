@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -182,12 +183,12 @@
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
-    apiKey: "AIzaSyBdL3fhRLfbh8cCBJjZoXP8p3BATry1DXg",
-    authDomain: "mama-alerta.firebaseapp.com",
-    projectId: "mama-alerta",
-    storageBucket: "mama-alerta.firebasestorage.app",
-    messagingSenderId: "458375340048",
-    appId: "1:458375340048:web:cd18a9960cbabc7de2aa95"
+    apiKey: "TU_API_KEY",
+    authDomain: "TU_PROYECTO.firebaseapp.com",
+    projectId: "TU_PROYECTO",
+    storageBucket: "TU_PROYECTO.appspot.com",
+    messagingSenderId: "TU_SENDER_ID",
+    appId: "TU_APP_ID"
   };
 
   const fbApp = initializeApp(firebaseConfig);
@@ -691,10 +692,24 @@
   function toBase64Url(b64){ return b64.replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); }
 
   function urlDatosQR(){
+    // Versión "liviana": solo lo esencial de cada control, sin repetir el
+    // texto completo de cada pregunta (eso ya vive en la propia app y en
+    // visor.html) — así el código QR tiene margen de sobra de espacio.
+    var registrosLivianos = estado.registros.slice(0,5).map(function(r){
+      return {
+        f: r.fecha,
+        s: r.sistolica,
+        d: r.diastolica,
+        bn: r.bp.nivel,
+        fn: r.flor.nivel,
+        sc: r.flor.siCount,
+        u: r.urgenciasActivas.length
+      };
+    });
     var resumen = {
-      generado: new Date().toISOString(),
-      perfil: estado.perfil,
-      registros: estado.registros.slice(0,5) // últimos 5, por el límite de tamaño de un QR
+      g: fechaHoyISO(),
+      p: estado.perfil,
+      r: registrosLivianos
     };
     var b64 = toBase64Url(b64EncodeUnicode(JSON.stringify(resumen)));
     var base = location.href.split("#")[0].replace(/[^\/]*$/, "");
@@ -709,7 +724,12 @@
       cont.innerHTML = '<p class="muted">No se pudo cargar el generador de código QR. Verifica tu conexión.</p>';
       return;
     }
-    new QRCode(cont, { text: urlDatosQR(), width:200, height:200, correctLevel: QRCode.CorrectLevel.M });
+    try{
+      new QRCode(cont, { text: urlDatosQR(), width:200, height:200, correctLevel: QRCode.CorrectLevel.L });
+    }catch(e){
+      console.error("Error al generar el QR:", e);
+      cont.innerHTML = '<p class="muted">No se pudo generar el código: hay demasiada información para un solo QR. Intenta de nuevo o consulta el historial directamente con tu médico.</p>';
+    }
   }
 
   function mensajeErrorAuth(code){
