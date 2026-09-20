@@ -82,6 +82,12 @@
     moderado:{emoji:"🌷", nombre:"Alerta moderada"},
     alto:{emoji:"🥀", nombre:"Alto riesgo"}
   };
+  var TEXTO_CONDICIONES = { hipertension:"Hipertensión arterial", diabetes:"Diabetes mellitus", asma:"Asma bronquial", convulsiones:"Episodios convulsivos previos", tiroides:"Patología tiroidea" };
+  var TEXTO_ETS = { vph:"VPH", sifilis:"Sífilis", gonorrea:"Gonorrea", chancro:"Chancro", herpes:"Herpes genital" };
+  function listaTexto(ids, mapa){
+    if(!ids || !ids.length) return "Ninguno";
+    return ids.map(function(id){ return mapa[id] || id; }).join(", ");
+  }
 
   var html = '<div class="aviso">Ficha generada por la propia paciente desde su teléfono — sin verificación adicional de identidad.</div>'+
     '<h1>'+esc(p.nombre)+' '+esc(p.apellido)+'</h1>'+
@@ -96,6 +102,20 @@
     '<div class="ficha-dato"><span class="k">Ocupación</span><span class="v">'+esc(p.ocupacion||"—")+'</span></div>'+
     '<div class="ficha-dato"><span class="k">Próxima consulta</span><span class="v">'+formatoFecha(p.proximaConsulta)+'</span></div>'+
     '<div class="ficha-dato"><span class="k">Contacto de emergencia</span><span class="v">'+esc(p.ceNombre)+' '+esc(p.ceApellido)+' · '+esc(p.ceTelefono||"—")+'</span></div>'+
+    '</div>';
+
+  html += '<h2>Antecedentes personales</h2><div class="panel">'+
+    '<div class="ficha-dato"><span class="k">Condiciones</span><span class="v">'+esc(listaTexto(p.antecedentesPersonales, TEXTO_CONDICIONES))+'</span></div>'+
+    '<div class="ficha-dato"><span class="k">Cirugía previa</span><span class="v">'+(p.cirugiaPrevia==="si" ? "Sí — "+esc(p.cirugiaPreviaDetalle||"sin detalle") : "No")+'</span></div>'+
+    '<div class="ficha-dato"><span class="k">Alergia a medicamentos</span><span class="v">'+(p.alergiaMedicamento==="si" ? "Sí — "+esc(p.alergiaMedicamentoDetalle||"sin detalle") : "No")+'</span></div>'+
+    '</div>';
+
+  html += '<h2>Antecedentes ginecoobstétricos</h2><div class="panel">'+
+    '<div class="ficha-dato"><span class="k">Edad de menarquia</span><span class="v">'+esc(p.menarquiaEdad||"—")+'</span></div>'+
+    '<div class="ficha-dato"><span class="k">Duración de la menstruación</span><span class="v">'+(p.duracionMenstruacion ? esc(p.duracionMenstruacion)+" días" : "—")+'</span></div>'+
+    '<div class="ficha-dato"><span class="k">Edad primera relación sexual</span><span class="v">'+esc(p.edadPrimeraRelacion||"—")+'</span></div>'+
+    '<div class="ficha-dato"><span class="k">Número de parejas sexuales</span><span class="v">'+esc(p.numeroParejasSexuales||"—")+'</span></div>'+
+    '<div class="ficha-dato"><span class="k">ETS diagnosticadas</span><span class="v">'+(p.etsDiagnostico==="si" ? esc(listaTexto(p.etsTipos, TEXTO_ETS)) + (p.etsOtraDetalle ? ", "+esc(p.etsOtraDetalle) : "") : "No") +'</span></div>'+
     '</div>';
 
   html += '<h2>Últimos controles ('+registros.length+')</h2>';
