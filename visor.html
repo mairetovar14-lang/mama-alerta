@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -66,14 +67,25 @@
     return;
   }
 
-  var p = datos.perfil || {};
-  var registros = datos.registros || [];
+  var p = datos.p || datos.perfil || {};
+  var registros = datos.r || datos.registros || [];
   var edad = calcularEdad(p.fechaNacimiento);
   var semanas = calcularSemanas(p.fur);
 
+  var BP_INFO = {
+    1:{clave:"n1", etiqueta:"✅ Normal / estable"},
+    2:{clave:"n2", etiqueta:"⚠️ Requiere vigilancia"},
+    3:{clave:"n3", etiqueta:"❌ Hipertensión Gestacional / Sospecha de Preeclampsia"}
+  };
+  var FLOR_INFO = {
+    bajo:{emoji:"🌸", nombre:"Bajo riesgo"},
+    moderado:{emoji:"🌷", nombre:"Alerta moderada"},
+    alto:{emoji:"🥀", nombre:"Alto riesgo"}
+  };
+
   var html = '<div class="aviso">Ficha generada por la propia paciente desde su teléfono — sin verificación adicional de identidad.</div>'+
     '<h1>'+esc(p.nombre)+' '+esc(p.apellido)+'</h1>'+
-    '<p class="muted">Generado el '+esc(new Date(datos.generado||Date.now()).toLocaleString("es-VE"))+'</p>'+
+    '<p class="muted">Generado el '+formatoFecha(datos.g || datos.generado)+'</p>'+
     '<div class="panel">'+
     '<div class="ficha-dato"><span class="k">Cédula</span><span class="v">'+esc(p.cedula)+'</span></div>'+
     '<div class="ficha-dato"><span class="k">Edad</span><span class="v">'+(edad!=null?edad+" años":"—")+'</span></div>'+
@@ -91,14 +103,16 @@
     html += '<div class="panel"><p class="muted">Esta paciente aún no tiene controles registrados.</p></div>';
   } else {
     registros.forEach(function(r){
-      var bpClave = (r.bp && r.bp.clave) || "n1";
-      var sintomasSi = (r.sintomas ? Object.keys(r.sintomas).filter(function(k){ return r.sintomas[k]==="si"; }) : []);
-      html += '<div class="registro '+bpClave+'">'+
-        '<div class="fecha">'+formatoFecha(r.fecha)+'</div>'+
-        '<div class="bp-linea '+bpClave+'"><span class="punto"></span>'+esc(r.sistolica)+'/'+esc(r.diastolica)+' mmHg — '+esc(r.bp ? r.bp.etiqueta : "")+'</div>'+
-        '<div>'+(r.flor ? r.flor.info.emoji+' '+esc(r.flor.info.nombre) : "")+'</div>'+
-        (sintomasSi.length ? '<p class="muted" style="margin-top:8px;">Síntomas marcados ese día: '+sintomasSi.length+'</p>' : '')+
-        ((r.urgenciasActivas && r.urgenciasActivas.length) ? '<div class="urgente">⚠ Ese día marcó '+r.urgenciasActivas.length+' señal(es) de atención médica inmediata.</div>' : '')+
+      var bpInfo = BP_INFO[r.bn] || BP_INFO[1];
+      var florInfo = FLOR_INFO[r.fn] || FLOR_INFO.bajo;
+      var sintomasSiCount = (r.sc != null) ? r.sc : 0;
+      var urgenciasCount = (r.u != null) ? r.u : 0;
+      html += '<div class="registro '+bpInfo.clave+'">'+
+        '<div class="fecha">'+formatoFecha(r.f)+'</div>'+
+        '<div class="bp-linea '+bpInfo.clave+'"><span class="punto"></span>'+esc(r.s)+'/'+esc(r.d)+' mmHg — '+bpInfo.etiqueta+'</div>'+
+        '<div>'+florInfo.emoji+' '+florInfo.nombre+'</div>'+
+        '<p class="muted" style="margin-top:8px;">Síntomas marcados ese día: '+sintomasSiCount+'</p>'+
+        (urgenciasCount > 0 ? '<div class="urgente">⚠ Ese día marcó '+urgenciasCount+' señal(es) de atención médica inmediata.</div>' : '')+
         '</div>';
     });
   }
