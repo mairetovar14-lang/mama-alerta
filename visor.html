@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mamá Alerta · Ficha de la paciente</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --rosa-media:#d68a97; --rosa-profunda:#8f3f52; --crema:#fbf3ee; --crema-panel:#ffffff;
+    --ciruela:#382230; --ciruela-suave:#6b5560; --linea:#e9d9d4;
+    --salvia:#5f8a6a; --salvia-fondo:#e7f0e5; --ambar:#b9791f; --ambar-fondo:#faedd8;
+    --burdeos:#a3323a; --burdeos-fondo:#f8dede; --radio:14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--crema); color:var(--ciruela); font-family:"Work Sans",system-ui,sans-serif; line-height:1.5;}
+  #app{max-width:520px; margin:0 auto; padding:22px 18px 60px;}
+  h1,h2,h3{font-family:"Fraunces",Georgia,serif; font-weight:700; margin:0 0 8px; color:var(--ciruela);}
+  h1{font-size:1.5rem;} h2{font-size:1.2rem;} h3{font-size:1.02rem;}
+  p{margin:0 0 8px;}
+  .muted{color:var(--ciruela-suave); font-size:0.88rem;}
+  .aviso{background:var(--ambar-fondo); color:var(--ambar); font-size:0.8rem; font-weight:600; padding:10px 14px; border-radius:10px; margin-bottom:18px; text-align:center;}
+  .panel{background:var(--crema-panel); border:1px solid var(--linea); border-radius:var(--radio); padding:18px; margin-bottom:14px;}
+  .ficha-dato{display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--linea); font-size:0.92rem; gap:12px;}
+  .ficha-dato:last-child{border-bottom:none;}
+  .ficha-dato .k{color:var(--ciruela-suave);} .ficha-dato .v{font-weight:600; text-align:right;}
+  .registro{border-radius:var(--radio); padding:16px; margin-bottom:12px; border:1px solid var(--linea);}
+  .registro .fecha{font-family:"Fraunces",serif; font-weight:700; font-size:1.02rem; margin-bottom:6px;}
+  .registro .bp-linea{display:flex; align-items:center; gap:8px; margin-bottom:8px; font-weight:600;}
+  .punto{width:9px; height:9px; border-radius:50%; display:inline-block;}
+  .n1 .punto, .badge.n1{background:var(--salvia);} .n2 .punto, .badge.n2{background:var(--ambar);} .n3 .punto, .badge.n3{background:var(--burdeos);}
+  .registro.n1{background:var(--salvia-fondo);} .registro.n2{background:var(--ambar-fondo);} .registro.n3{background:var(--burdeos-fondo);}
+  .lista-si{margin:6px 0 0; padding-left:18px; font-size:0.88rem;}
+  .lista-si li{margin-bottom:3px;}
+  .urgente{background:var(--burdeos-fondo); border:1.5px solid var(--burdeos); border-radius:10px; padding:10px 12px; margin-top:8px; font-size:0.88rem; color:var(--burdeos); font-weight:600;}
+  .vacio{text-align:center; padding:40px 10px; color:var(--ciruela-suave);}
+</style>
+</head>
+<body>
+<div id="app"><div class="vacio">Cargando ficha…</div></div>
+<script>
+(function(){
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+  function formatoFecha(iso){ if(!iso) return "—"; var p=String(iso).split("-"); return p.length===3 ? p[2]+"/"+p[1]+"/"+p[0] : esc(iso); }
+  function calcularEdad(f){ if(!f) return null; var h=new Date(),n=new Date(f+"T00:00:00"); var e=h.getFullYear()-n.getFullYear(); var m=h.getMonth()-n.getMonth(); if(m<0||(m===0&&h.getDate()<n.getDate())) e--; return e; }
+  function calcularSemanas(f){ if(!f) return null; var d=new Date(f+"T00:00:00"),h=new Date(); var dias=Math.floor((h-d)/86400000); return dias<0?null:Math.floor(dias/7); }
+
+  function fromBase64Url(s){ s = s.replace(/-/g,"+").replace(/_/g,"/"); while(s.length%4) s+="="; return s; }
+  function b64DecodeUnicode(str){
+    return decodeURIComponent(atob(str).split("").map(function(c){ return "%"+("00"+c.charCodeAt(0).toString(16)).slice(-2); }).join(""));
+  }
+
+  var app = document.getElementById("app");
+  var hash = location.hash.replace(/^#/, "");
+
+  if(!hash){
+    app.innerHTML = '<div class="vacio">Este enlace no trae información de ninguna paciente.<br>Pide a la paciente que genere el código QR desde su app.</div>';
+    return;
+  }
+
+  var datos;
+  try{
+    datos = JSON.parse(b64DecodeUnicode(fromBase64Url(hash)));
+  }catch(e){
+    app.innerHTML = '<div class="vacio">No se pudo leer la información de este código.<br>Pide a la paciente que genere uno nuevo.</div>';
+    return;
+  }
+
+  var p = datos.perfil || {};
+  var registros = datos.registros || [];
+  var edad = calcularEdad(p.fechaNacimiento);
+  var semanas = calcularSemanas(p.fur);
+
+  var html = '<div class="aviso">Ficha generada por la propia paciente desde su teléfono — sin verificación adicional de identidad.</div>'+
+    '<h1>'+esc(p.nombre)+' '+esc(p.apellido)+'</h1>'+
+    '<p class="muted">Generado el '+esc(new Date(datos.generado||Date.now()).toLocaleString("es-VE"))+'</p>'+
+    '<div class="panel">'+
+    '<div class="ficha-dato"><span class="k">Cédula</span><span class="v">'+esc(p.cedula)+'</span></div>'+
+    '<div class="ficha-dato"><span class="k">Edad</span><span class="v">'+(edad!=null?edad+" años":"—")+'</span></div>'+
+    '<div class="ficha-dato"><span class="k">Fecha de última regla</span><span class="v">'+formatoFecha(p.fur)+'</span></div>'+
+    '<div class="ficha-dato"><span class="k">Semanas de embarazo</span><span class="v">'+(semanas!=null?semanas+" semanas":"—")+'</span></div>'+
+    '<div class="ficha-dato"><span class="k">Dirección</span><span class="v">'+esc(p.direccion||"—")+'</span></div>'+
+    '<div class="ficha-dato"><span class="k">Teléfono</span><span class="v">'+esc(p.telefono||"—")+'</span></div>'+
+    '<div class="ficha-dato"><span class="k">Ocupación</span><span class="v">'+esc(p.ocupacion||"—")+'</span></div>'+
+    '<div class="ficha-dato"><span class="k">Próxima consulta</span><span class="v">'+formatoFecha(p.proximaConsulta)+'</span></div>'+
+    '<div class="ficha-dato"><span class="k">Contacto de emergencia</span><span class="v">'+esc(p.ceNombre)+' '+esc(p.ceApellido)+' · '+esc(p.ceTelefono||"—")+'</span></div>'+
+    '</div>';
+
+  html += '<h2>Últimos controles ('+registros.length+')</h2>';
+  if(registros.length === 0){
+    html += '<div class="panel"><p class="muted">Esta paciente aún no tiene controles registrados.</p></div>';
+  } else {
+    registros.forEach(function(r){
+      var bpClave = (r.bp && r.bp.clave) || "n1";
+      var sintomasSi = (r.sintomas ? Object.keys(r.sintomas).filter(function(k){ return r.sintomas[k]==="si"; }) : []);
+      html += '<div class="registro '+bpClave+'">'+
+        '<div class="fecha">'+formatoFecha(r.fecha)+'</div>'+
+        '<div class="bp-linea '+bpClave+'"><span class="punto"></span>'+esc(r.sistolica)+'/'+esc(r.diastolica)+' mmHg — '+esc(r.bp ? r.bp.etiqueta : "")+'</div>'+
+        '<div>'+(r.flor ? r.flor.info.emoji+' '+esc(r.flor.info.nombre) : "")+'</div>'+
+        (sintomasSi.length ? '<p class="muted" style="margin-top:8px;">Síntomas marcados ese día: '+sintomasSi.length+'</p>' : '')+
+        ((r.urgenciasActivas && r.urgenciasActivas.length) ? '<div class="urgente">⚠ Ese día marcó '+r.urgenciasActivas.length+' señal(es) de atención médica inmediata.</div>' : '')+
+        '</div>';
+    });
+  }
+
+  app.innerHTML = html;
+})();
+</script>
+</body>
+</html>

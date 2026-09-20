@@ -1,0 +1,18 @@
+rules_version = '2';
+
+// Reglas de seguridad para Mamá Alerta.
+// Cada paciente (identificada por su uid de Firebase Authentication)
+// solo puede leer y escribir su propio documento de perfil y sus
+// propios registros diarios. Nadie puede ver los datos de otra usuaria.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /usuarias/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+      match /registros/{registroId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+  }
+}

@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mamá Alerta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --rosa-suave:#e9b8c0; --rosa-media:#d68a97; --rosa-profunda:#8f3f52;
+    --crema:#fbf3ee; --crema-panel:#ffffff; --ciruela:#382230; --ciruela-suave:#6b5560;
+    --linea:#e9d9d4; --salvia:#5f8a6a; --salvia-fondo:#e7f0e5; --ambar:#b9791f; --ambar-fondo:#faedd8;
+    --burdeos:#a3323a; --burdeos-fondo:#f8dede; --sombra:0 1px 0 rgba(56,34,48,0.06); --radio:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--crema); color:var(--ciruela); font-family:"Work Sans",system-ui,sans-serif; line-height:1.5; min-height:100vh;}
+  #app{max-width:480px; margin:0 auto; padding:20px 18px 64px; min-height:100vh;}
+  body.pantalla-auth #app{padding:0; max-width:none;}
+  h1,h2,h3{font-family:"Fraunces",Georgia,serif; font-weight:600; margin:0 0 6px; color:var(--ciruela); line-height:1.15;}
+  h1{font-size:1.7rem; font-weight:700;} h2{font-size:1.28rem;} h3{font-size:1.05rem;}
+  p{margin:0 0 10px;}
+  .muted{color:var(--ciruela-suave); font-size:0.92rem;}
+  header.top{display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:22px; padding-bottom:14px; border-bottom:1px solid var(--linea);}
+  header.top .brand{display:flex; align-items:center; gap:8px;}
+  header.top .brand .mark{font-size:1.4rem;}
+  header.top .brand h1{font-size:1.35rem;}
+  header.top .sub{font-size:0.82rem; color:var(--ciruela-suave); text-align:right; cursor:pointer;}
+  .panel{background:var(--crema-panel); border:1px solid var(--linea); border-radius:var(--radio); padding:20px; margin-bottom:16px; box-shadow:var(--sombra);}
+  label{display:block; font-size:0.86rem; font-weight:600; margin:0 0 5px; color:var(--ciruela-suave);}
+  .campo{margin-bottom:14px;}
+  input[type=text],input[type=tel],input[type=number],input[type=date],input[type=email],input[type=password]{
+    width:100%; font-family:inherit; font-size:1rem; padding:10px 12px; border-radius:9px; border:1.5px solid var(--linea); background:var(--crema); color:var(--ciruela);
+  }
+  input:focus{outline:2px solid var(--rosa-media); outline-offset:1px;}
+  .fila2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  button{font-family:inherit; font-size:0.98rem; font-weight:600; cursor:pointer; border-radius:10px; border:none; padding:13px 18px;}
+  .btn-primaria{background:var(--rosa-profunda); color:#fff; width:100%;}
+  .btn-primaria:disabled{opacity:0.6;}
+  .btn-secundaria{background:transparent; color:var(--rosa-profunda); border:1.5px solid var(--rosa-profunda); width:100%;}
+  .btn-texto{background:none; color:var(--ciruela-suave); padding:8px 4px; text-decoration:underline; font-weight:500;}
+  .btn-fila{display:flex; gap:10px; margin-top:16px;}
+  .btn-fila button{flex:1;}
+  .error-msg{background:var(--burdeos-fondo); color:var(--burdeos); padding:10px 12px; border-radius:9px; font-size:0.88rem; margin-bottom:12px;}
+  .info-msg{background:var(--salvia-fondo); color:var(--salvia); padding:10px 12px; border-radius:9px; font-size:0.88rem; margin-bottom:12px;}
+  .olvide{display:block; text-align:right; font-size:0.83rem; color:var(--rosa-profunda); text-decoration:none; margin:-6px 0 16px; cursor:pointer; font-weight:600;}
+  .recuperar-volver{display:block; text-align:center; font-size:0.85rem; color:var(--ciruela-suave); margin-top:14px; cursor:pointer; text-decoration:underline;}
+  .tabs{display:flex; gap:8px; margin-bottom:16px;}
+  .tabs button{flex:1; background:var(--crema); border:1.5px solid var(--linea); color:var(--ciruela-suave);}
+  .tabs button.activo{background:var(--rosa-profunda); color:#fff; border-color:var(--rosa-profunda);}
+
+  /* ---- pantalla de inicio de sesión ---- */
+  body.pantalla-auth{
+    background:
+      radial-gradient(560px 420px at 12% -8%, #f6d9de 0%, rgba(246,217,222,0) 60%),
+      radial-gradient(520px 420px at 108% 12%, #f0c9d2 0%, rgba(240,201,210,0) 55%),
+      var(--crema);
+  }
+  .auth-wrap{max-width:400px; margin:0 auto; padding:56px 20px 40px; min-height:100vh;}
+  .auth-hero{text-align:center; margin-bottom:30px;}
+  .auth-hero .icono{
+    width:64px; height:64px; margin:0 auto 18px; border-radius:20px;
+    background:linear-gradient(150deg, var(--rosa-suave), var(--rosa-profunda));
+    display:flex; align-items:center; justify-content:center; font-size:30px;
+    box-shadow:0 10px 24px -8px rgba(143,63,82,0.45);
+  }
+  .auth-hero h1{font-size:1.9rem; margin-bottom:6px;}
+  .auth-hero p{color:var(--ciruela-suave); font-size:0.95rem; margin:0;}
+  .auth-card{
+    background:var(--crema-panel); border-radius:22px; padding:26px 24px 24px;
+    box-shadow:0 20px 40px -18px rgba(56,34,48,0.22), 0 1px 0 rgba(56,34,48,0.04);
+    border:1px solid var(--linea);
+  }
+  .segmented{
+    display:flex; background:var(--crema); border-radius:12px; padding:4px; margin-bottom:22px; gap:4px;
+  }
+  .segmented button{
+    flex:1; background:transparent; color:var(--ciruela-suave); border:none; border-radius:9px;
+    padding:9px 6px; font-size:0.9rem; transition:background .15s, color .15s, box-shadow .15s;
+  }
+  .segmented button.activo{background:var(--crema-panel); color:var(--rosa-profunda); box-shadow:0 2px 8px -2px rgba(56,34,48,0.18);}
+  .auth-card label{font-size:0.8rem; letter-spacing:.01em;}
+  .auth-card input{padding:12px 14px; border-radius:11px; font-size:0.98rem;}
+  .auth-card .btn-primaria{
+    background:linear-gradient(135deg, var(--rosa-profunda), #7a3346);
+    border-radius:11px; padding:14px; margin-top:4px;
+    box-shadow:0 12px 22px -10px rgba(143,63,82,0.55);
+  }
+  .auth-foot{text-align:center; color:var(--ciruela-suave); font-size:0.82rem; margin-top:22px;}
+
+  .banner-offline{
+    display:flex; align-items:center; gap:8px; justify-content:center;
+    background:var(--ambar-fondo); color:var(--ambar); font-size:0.82rem; font-weight:600;
+    padding:9px 14px; text-align:center;
+  }
+
+  .recordatorio{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    border-radius:12px; padding:12px 14px; margin-bottom:16px; font-size:0.88rem; font-weight:600;
+  }
+  .recordatorio-neutro{background:var(--crema-panel); border:1px solid var(--linea); color:var(--ciruela-suave);}
+  .recordatorio-cercano{background:var(--ambar-fondo); color:var(--ambar);}
+  .recordatorio-hoy{background:var(--rosa-suave); color:var(--rosa-profunda);}
+  .recordatorio-vencido{background:var(--linea); color:var(--ciruela-suave);}
+  .recordatorio .editar-link{font-weight:600; text-decoration:underline; white-space:nowrap; cursor:pointer; color:inherit;}
+
+  .alerta-tendencia{
+    background:var(--ambar-fondo); border:2px solid var(--ambar); border-radius:var(--radio);
+    padding:18px; margin-bottom:14px;
+  }
+  .alerta-tendencia h3{color:var(--ambar); font-size:1.05rem; margin-bottom:6px;}
+
+  .qr-contenedor{display:flex; justify-content:center; padding:14px 0; background:#fff; border-radius:12px;}
+  .chip-fila{display:flex; gap:8px; margin:14px 0;}
+  .chip{flex:1; text-align:center; padding:10px 6px; border-radius:9px; background:var(--crema); border:1.5px solid var(--linea); font-weight:600; font-size:1.05rem;}
+  .chip .n{font-size:0.72rem; font-weight:500; color:var(--ciruela-suave); display:block; margin-top:2px;}
+  .pregunta{padding:14px 0; border-bottom:1px solid var(--linea);}
+  .pregunta:last-child{border-bottom:none;}
+  .pregunta p.texto{font-weight:500; margin-bottom:10px; color:var(--ciruela);}
+  .sn{display:flex; gap:10px;}
+  .sn label.opcion{flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:9px; border-radius:9px; border:1.5px solid var(--linea); font-weight:600; font-size:0.92rem; color:var(--ciruela-suave); cursor:pointer;}
+  .sn input{position:absolute; opacity:0; pointer-events:none;}
+  .sn label.opcion.si.marcada{background:var(--burdeos-fondo); border-color:var(--burdeos); color:var(--burdeos);}
+  .sn label.opcion.no.marcada{background:var(--salvia-fondo); border-color:var(--salvia); color:var(--salvia);}
+  .progreso{display:flex; gap:6px; margin-bottom:18px;}
+  .progreso .paso{flex:1; height:4px; border-radius:3px; background:var(--linea);}
+  .progreso .paso.activo{background:var(--rosa-profunda);}
+  .resultado-bp{border-radius:var(--radio); padding:18px; margin-bottom:14px;}
+  .resultado-bp.n1{background:var(--salvia-fondo);} .resultado-bp.n2{background:var(--ambar-fondo);} .resultado-bp.n3{background:var(--burdeos-fondo);}
+  .resultado-bp .etiqueta{font-family:"Fraunces",serif; font-weight:700; font-size:1.1rem; margin-bottom:4px;}
+  .resultado-bp.n1 .etiqueta{color:var(--salvia);} .resultado-bp.n2 .etiqueta{color:var(--ambar);} .resultado-bp.n3 .etiqueta{color:var(--burdeos);}
+  .flor-resultado{text-align:center; padding:26px 18px; border-radius:var(--radio); margin-bottom:14px;}
+  .flor-resultado .emoji{font-size:3rem; display:block; margin-bottom:8px;}
+  .flor-resultado.bajo{background:var(--salvia-fondo);} .flor-resultado.moderado{background:var(--ambar-fondo);} .flor-resultado.alto{background:var(--burdeos-fondo);}
+  .flor-resultado .nivel{font-family:"Fraunces",serif; font-weight:700; font-size:1.2rem;}
+  .flor-resultado.bajo .nivel{color:var(--salvia);} .flor-resultado.moderado .nivel{color:var(--ambar);} .flor-resultado.alto .nivel{color:var(--burdeos);}
+  .alerta-medica{background:var(--burdeos-fondo); border:2px solid var(--burdeos); border-radius:var(--radio); padding:18px; margin-bottom:14px;}
+  .alerta-medica h3{color:var(--burdeos); font-size:1.15rem; margin-bottom:8px;}
+  .alerta-medica ul{margin:8px 0 12px; padding-left:20px;} .alerta-medica li{margin-bottom:4px;}
+  .btn-llamar{display:block; text-align:center; background:var(--burdeos); color:#fff; text-decoration:none; padding:13px; border-radius:10px; font-weight:700; margin-top:10px;}
+  .historial-item{display:flex; align-items:center; gap:12px; padding:12px 4px; border-bottom:1px solid var(--linea); cursor:pointer; background:none; border-left:none; border-right:none; border-top:none; width:100%; text-align:left;}
+  .historial-item:last-child{border-bottom:none;}
+  .historial-item .flor{font-size:1.4rem;} .historial-item .datos{flex:1;} .historial-item .fecha{font-weight:600; font-size:0.92rem;} .historial-item .bp{font-size:0.82rem; color:var(--ciruela-suave);}
+  .punto{width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:5px;}
+  .punto.n1{background:var(--salvia);} .punto.n2{background:var(--ambar);} .punto.n3{background:var(--burdeos);}
+  .vacio{text-align:center; padding:30px 10px; color:var(--ciruela-suave);}
+  .vacio .emoji{font-size:2.2rem; display:block; margin-bottom:10px;}
+  .ficha-dato{display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--linea); font-size:0.92rem;}
+  .ficha-dato:last-child{border-bottom:none;} .ficha-dato .k{color:var(--ciruela-suave);} .ficha-dato .v{font-weight:600; text-align:right;}
+  .leyenda{font-size:0.86rem; color:var(--ciruela-suave); margin-top:10px;}
+  .leyenda .fila{display:flex; gap:8px; align-items:flex-start; margin-bottom:6px;} .leyenda .fila span.e{font-size:1.1rem;}
+  .cargando{text-align:center; padding:60px 10px; color:var(--ciruela-suave);}
+  @media (max-width:360px){ .fila2{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div id="app"><div class="cargando">Cargando…</div></div>
+
+<!--
+  ====================================================================
+  CONFIGURACIÓN DE FIREBASE
+  Sustituye estos valores por los de tu proyecto (Firebase console →
+  Configuración del proyecto → Tus apps → SDK setup and configuration).
+  Debes tener habilitados:
+    - Authentication → Sign-in method → Correo electrónico/contraseña
+    - Firestore Database (modo producción, con las reglas de abajo)
+  ====================================================================
+-->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    onAuthStateChanged, signOut, sendPasswordResetEmail
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import {
+    getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+    doc, getDoc, setDoc, collection, addDoc, query,
+    orderBy, onSnapshot
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "TU_API_KEY",
+    authDomain: "TU_PROYECTO.firebaseapp.com",
+    projectId: "TU_PROYECTO",
+    storageBucket: "TU_PROYECTO.appspot.com",
+    messagingSenderId: "TU_SENDER_ID",
+    appId: "TU_APP_ID"
+  };
+
+  const fbApp = initializeApp(firebaseConfig);
+  const auth = getAuth(fbApp);
+  // Persistencia offline: los datos leídos quedan en caché en el dispositivo
+  // y los guardados sin conexión se encolan y se sincronizan solos al
+  // recuperar internet. persistentMultipleTabManager permite tener la app
+  // abierta en varias pestañas/dispositivos sin conflictos.
+  const dbase = initializeFirestore(fbApp, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  });
+
+  // ---------- preguntas (idénticas al protocolo) ----------
+  var PREGUNTAS_SINTOMAS = [
+    { id:"cabeza", texto:'¿Sientes un dolor de cabeza fuerte que no se te quita ni con descanso?' },
+    { id:"vision", texto:'¿Ves lucecitas, chispas, puntos negros o sientes la visión borrosa?' },
+    { id:"oidos", texto:'¿Escuchas un zumbido o pitido constante en tus oídos?' },
+    { id:"abdomen", texto:'¿Sientes un dolor intenso o "boca del estómago" muy fuerte (debajo de las costillas del lado derecho)?' },
+    { id:"nauseas", texto:'¿Has tenido mareos intensos, náuseas repentinas o vómitos?' },
+    { id:"hinchazon", texto:'¿Notaste que tu cara o tus manos se hincharon de forma repentina en los últimos días?' },
+    { id:"opresion", texto:'¿Has sentido una opresión en el pecho, agitación sin causa aparente o incapacidad para conciliar el sueño en los últimos días?' },
+    { id:"oliguria", texto:'¿Has notado que orinas mucho menos de lo normal o que tu orina se ha vuelto muy oscura, a pesar de estar tomando agua?' },
+    { id:"movimiento", texto:'¿Sientes que tu bebé se mueve menos de lo habitual o que sus movimientos han cambiado de forma drástica?' }
+  ];
+  var PREGUNTAS_URGENCIA = [
+    { id:"traumatismo", texto:'¿Has sufrido alguna caída, golpe o traumatismo directo en el abdomen?' },
+    { id:"saludMental", texto:'¿Sientes una tristeza profunda constante, ataques de pánico o pensamientos de hacerte daño a ti o al bebé?', sensible:true },
+    { id:"secrecion", texto:'¿Presentas secreción vaginal con mal olor, cambio brusco de color (verdoso/grisáceo) o comezón intensa?' },
+    { id:"barrigaDura", texto:'¿Sientes la barriga dura todo el tiempo (como una tabla) y con dolor continuo que no se relaja entre intervalos?' },
+    { id:"orinaSangre", texto:'¿Al orinar notas que la pipí sale muy oscura (color té o refresco de cola) o con presencia de sangre visible?' },
+    { id:"oliguriaExtrema", texto:'¿Has notado que orinas una cantidad extremadamente pequeña en el día o que llevas muchas horas sin poder orinar?' },
+    { id:"sangrado", texto:'¿Has presentado un manchado o sangrado por la vagina, sin importar si es rojo brillante, oscuro o en poca cantidad?' },
+    { id:"liquido", texto:'¿Has notado la salida repentina de líquido claro por la vagina, como si te hubieras mojado sin poder contenerlo?' },
+    { id:"fiebre", texto:'¿Tienes fiebre igual o mayor a 38 °C acompañada de escalofríos o temblores incontrolables?' },
+    { id:"vomitos", texto:'¿Has presentado vómitos tan severos que no te permiten retener ningún líquido o alimento durante todo el día?' }
+  ];
+
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+  function fechaHoyISO(){ return new Date().toISOString().slice(0,10); }
+  function formatoFecha(iso){ if(!iso) return ""; var p=iso.split("-"); return p[2]+"/"+p[1]+"/"+p[0]; }
+  function calcularEdad(f){ if(!f) return null; var h=new Date(),n=new Date(f+"T00:00:00"); var e=h.getFullYear()-n.getFullYear(); var m=h.getMonth()-n.getMonth(); if(m<0||(m===0&&h.getDate()<n.getDate())) e--; return e; }
+  function calcularSemanas(f){ if(!f) return null; var d=new Date(f+"T00:00:00"),h=new Date(); var dias=Math.floor((h-d)/86400000); return dias<0?null:Math.floor(dias/7); }
+  function clasificarBP(sis,dia){
+    sis=Number(sis); dia=Number(dia);
+    if(sis>=140||dia>=90) return {nivel:3,clave:"n3",etiqueta:"❌ Hipertensión Gestacional / Sospecha de Preeclampsia",texto:"Evaluación médica prioritaria. Si se acompaña de cualquiera de los síntomas del triaje (dolor de cabeza, visión borrosa, dolor de abdomen, oliguria) acude a tu centro de salud cercano lo más pronto posible."};
+    if(sis>=120||dia>=80) return {nivel:2,clave:"n2",etiqueta:"⚠️ Requiere vigilancia",texto:"No confirma un diagnóstico de hipertensión, pero indica la necesidad de vigilancia estrecha, reposo, control de síntomas y reevaluación tensional en las siguientes 24 horas. Acude al médico."};
+    return {nivel:1,clave:"n1",etiqueta:"✅ Normal / estable",texto:"Control prenatal de rutina, educación en hábitos saludables y seguimiento del embarazo con tranquilidad."};
+  }
+  function clasificarFlor(sintomas,bp){
+    var c=0; PREGUNTAS_SINTOMAS.forEach(function(p){ if(sintomas[p.id]==="si") c++; });
+    var nivel="bajo"; if(c>=3) nivel="alto"; else if(c>=1) nivel="moderado";
+    if(bp.nivel===3) nivel="alto"; else if(bp.nivel===2 && nivel==="bajo") nivel="moderado";
+    var info={ bajo:{emoji:"🌸",nombre:"Bajo riesgo",desc:"Bienestar y control prenatal al día."},
+      moderado:{emoji:"🌷",nombre:"Alerta moderada",desc:"Señal de atención en 24 horas. Vigila los síntomas y contacta a tu médico si continúan."},
+      alto:{emoji:"🥀",nombre:"Alto riesgo",desc:"Visita al médico para atención inmediata."} };
+    return {nivel:nivel,siCount:c,info:info[nivel]};
+  }
+  function urgenciasActivas(u){ return PREGUNTAS_URGENCIA.filter(function(p){ return u[p.id]==="si"; }); }
+  function telHref(n){ return "tel:"+String(n||"").replace(/[^0-9+]/g,""); }
+
+  function detectarAumentoTension(sisActual, diaActual, bpActual, anterior){
+    if(!anterior) return null;
+    var sisPrev = Number(anterior.sistolica), diaPrev = Number(anterior.diastolica);
+    var subioCategoria = anterior.bp && bpActual.nivel > anterior.bp.nivel;
+    var subioSis = (sisActual - sisPrev) >= 15;
+    var subioDia = (diaActual - diaPrev) >= 10;
+    if(subioCategoria || subioSis || subioDia){
+      return { anterior: anterior, subioSis: subioSis, subioDia: subioDia, subioCategoria: subioCategoria };
+    }
+    return null;
+  }
+
+  // ---------- estado ----------
+  var estado = { pantalla:"cargando", authTab:"login", authError:"", authInfo:"", perfil:null, registros:[], registroCargado:false,
+    controlPaso:1, controlDatos:{sistolica:"",diastolica:"",sintomas:{},urgencia:{}}, registroVisto:null, guardando:false,
+    editandoConsulta:false, mostrandoQR:false };
+  var uidActual = null;
+  var unsubRegistros = null;
+
+  var app = document.getElementById("app");
+
+  function render(){
+    var html = "";
+    if(estado.pantalla==="cargando") html = '<div class="cargando">Cargando…</div>';
+    else if(estado.pantalla==="auth") html = vistaAuth();
+    else if(estado.pantalla==="completarPerfil") html = vistaCompletarPerfil();
+    else if(estado.pantalla==="panel") html = vistaPanel();
+    else if(estado.pantalla==="control") html = vistaControl();
+    else if(estado.pantalla==="resultado") html = vistaResultado();
+    else if(estado.pantalla==="historial") html = vistaHistorial();
+    else if(estado.pantalla==="detalle") html = vistaDetalle();
+    var banner = (estado.pantalla!=="cargando" && !navigator.onLine)
+      ? '<div class="banner-offline">📶 Sin conexión — lo que registres se guardará y se sincronizará solo al volver internet</div>'
+      : '';
+    app.innerHTML = banner + html;
+    document.body.classList.toggle("pantalla-auth", estado.pantalla === "auth");
+    ligarEventos();
+    window.scrollTo(0,0);
+  }
+
+  window.addEventListener("online", render);
+  window.addEventListener("offline", render);
+
+  // Registra el service worker para que la app pueda abrirse sin
+  // conexión después de la primera visita (ver sw.js).
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("./sw.js").catch(function(err){
+        console.warn("No se pudo registrar el service worker:", err);
+      });
+    });
+  }
+
+  function encabezado(sub){
+    return '<header class="top"><div class="brand"><span class="mark">🌷</span><h1>Mamá Alerta</h1></div>'+
+      (sub ? '<div class="sub" data-accion="cerrar-sesion">'+esc(sub)+' · salir</div>' : '')+'</header>';
+  }
+
+  // ---------- auth ----------
+  function vistaAuth(){
+    if(estado.authTab === "recuperar") return vistaRecuperar();
+    var esLogin = estado.authTab === "login";
+    return '<div class="auth-wrap">'+
+      '<div class="auth-hero">'+
+      '<div class="icono">🌷</div>'+
+      '<h1>Mamá Alerta</h1>'+
+      '<p>Tu control prenatal, día a día.</p>'+
+      '</div>'+
+      '<div class="auth-card">'+
+      '<div class="segmented">'+
+      '<button class="'+(esLogin?"activo":"")+'" data-accion="tab-login">Iniciar sesión</button>'+
+      '<button class="'+(!esLogin?"activo":"")+'" data-accion="tab-registro">Crear cuenta</button>'+
+      '</div>'+
+      (estado.authError ? '<div class="error-msg">'+esc(estado.authError)+'</div>' : '')+
+      (estado.authInfo ? '<div class="info-msg">'+esc(estado.authInfo)+'</div>' : '')+
+      '<form id="form-auth">'+
+      '<div class="campo"><label>Correo electrónico</label><input type="email" id="auth-email" required autocomplete="email"></div>'+
+      '<div class="campo"><label>Contraseña</label><input type="password" id="auth-pass" required minlength="6" autocomplete="'+(esLogin?"current-password":"new-password")+'"></div>'+
+      (esLogin ? '<a class="olvide" data-accion="olvide-password">¿Olvidaste tu contraseña?</a>' : '')+
+      '<button type="submit" class="btn-primaria" id="auth-submit">'+(esLogin?"Iniciar sesión":"Crear cuenta")+'</button>'+
+      '</form>'+
+      '</div>'+
+      '<p class="auth-foot">Acceso privado e individual para cada usuaria.</p>'+
+      '</div>';
+  }
+
+  function vistaRecuperar(){
+    return '<div class="auth-wrap">'+
+      '<div class="auth-hero">'+
+      '<div class="icono">🌷</div>'+
+      '<h1>Recuperar acceso</h1>'+
+      '<p>Te enviaremos un enlace para restablecer tu contraseña.</p>'+
+      '</div>'+
+      '<div class="auth-card">'+
+      (estado.authError ? '<div class="error-msg">'+esc(estado.authError)+'</div>' : '')+
+      (estado.authInfo ? '<div class="info-msg">'+esc(estado.authInfo)+'</div>' : '')+
+      '<form id="form-recuperar">'+
+      '<div class="campo"><label>Correo electrónico</label><input type="email" id="recuperar-email" required autocomplete="email"></div>'+
+      '<button type="submit" class="btn-primaria" id="recuperar-submit">Enviar enlace de recuperación</button>'+
+      '</form>'+
+      '<a class="recuperar-volver" data-accion="volver-login">← Volver a iniciar sesión</a>'+
+      '</div>'+
+      '</div>';
+  }
+
+  // ---------- completar perfil (primera vez) ----------
+  function vistaCompletarPerfil(){
+    return encabezado(auth.currentUser ? auth.currentUser.email : "") +
+      '<form id="form-perfil" class="panel">'+
+      '<h2>Completa tu perfil</h2>'+
+      '<p class="muted">Estos datos se guardan una sola vez.</p>'+
+      '<div class="campo"><label>Nombre</label><input type="text" name="nombre" required></div>'+
+      '<div class="campo"><label>Apellido</label><input type="text" name="apellido" required></div>'+
+      '<div class="campo"><label>Cédula</label><input type="text" name="cedula" required></div>'+
+      '<div class="fila2">'+
+      '<div class="campo"><label>Fecha de nacimiento</label><input type="date" name="fechaNacimiento" required></div>'+
+      '<div class="campo"><label>Fecha de última regla</label><input type="date" name="fur" required></div>'+
+      '</div>'+
+      '<div class="campo"><label>Dirección</label><input type="text" name="direccion"></div>'+
+      '<div class="fila2">'+
+      '<div class="campo"><label>Número de teléfono</label><input type="tel" name="telefono"></div>'+
+      '<div class="campo"><label>Ocupación</label><input type="text" name="ocupacion"></div>'+
+      '</div>'+
+      '<h3 style="margin-top:18px;">Contacto de emergencia</h3>'+
+      '<div class="fila2">'+
+      '<div class="campo"><label>Nombre</label><input type="text" name="ceNombre" required></div>'+
+      '<div class="campo"><label>Apellido</label><input type="text" name="ceApellido" required></div>'+
+      '</div>'+
+      '<div class="campo"><label>Teléfono</label><input type="tel" name="ceTelefono" required></div>'+
+      '<h3 style="margin-top:18px;">Próxima consulta</h3>'+
+      '<div class="campo"><label>Fecha de tu próxima consulta (opcional)</label><input type="date" name="proximaConsulta"></div>'+
+      '<button type="submit" class="btn-primaria">Guardar y continuar</button>'+
+      '</form>';
+  }
+
+  function diasHasta(fechaISO){
+    if(!fechaISO) return null;
+    var hoy = new Date(); hoy.setHours(0,0,0,0);
+    var f = new Date(fechaISO+"T00:00:00");
+    return Math.round((f - hoy) / 86400000);
+  }
+
+  // ---------- panel ----------
+  function vistaPanel(){
+    var p = estado.perfil;
+    var edad = calcularEdad(p.fechaNacimiento);
+    var semanas = calcularSemanas(p.fur);
+    var registros = estado.registros;
+    var ultimo = registros.length ? registros[0] : null; // ordenados desc
+
+    var recordatorio = "";
+    if(estado.editandoConsulta){
+      recordatorio = '<div class="panel"><h3>Próxima consulta</h3>'+
+        '<form id="form-consulta">'+
+        '<div class="campo"><input type="date" name="proximaConsulta" value="'+esc(p.proximaConsulta||"")+'"></div>'+
+        '<div class="btn-fila"><button type="button" class="btn-secundaria" data-accion="cancelar-consulta">Cancelar</button>'+
+        '<button type="submit" class="btn-primaria">Guardar</button></div>'+
+        '</form></div>';
+    } else if(p.proximaConsulta){
+      var dias = diasHasta(p.proximaConsulta);
+      var clase = "recordatorio-neutro", texto = "";
+      if(dias < 0){ clase="recordatorio-vencido"; texto = "Tu consulta era el "+formatoFecha(p.proximaConsulta)+". Si ya fuiste, actualiza la fecha de tu próxima cita."; }
+      else if(dias === 0){ clase="recordatorio-hoy"; texto = "📅 ¡Hoy es tu consulta! ("+formatoFecha(p.proximaConsulta)+")"; }
+      else if(dias <= 3){ clase="recordatorio-cercano"; texto = "📅 Tu consulta es en "+dias+" día"+(dias===1?"":"s")+", el "+formatoFecha(p.proximaConsulta)+"."; }
+      else { texto = "📅 Tu próxima consulta es el "+formatoFecha(p.proximaConsulta)+"."; }
+      recordatorio = '<div class="recordatorio '+clase+'"><span>'+texto+'</span><a class="editar-link" data-accion="editar-consulta">editar</a></div>';
+    } else {
+      recordatorio = '<div class="recordatorio recordatorio-neutro"><span>Aún no tienes una fecha de consulta guardada.</span><a class="editar-link" data-accion="editar-consulta">agregar</a></div>';
+    }
+
+    var resumenUltimo = "";
+    if(ultimo){
+      resumenUltimo = '<div class="panel"><h3>Último control · '+esc(formatoFecha(ultimo.fecha))+'</h3>'+
+        '<div class="chip-fila"><div class="chip">'+esc(ultimo.sistolica)+'/'+esc(ultimo.diastolica)+'<span class="n">mmHg</span></div>'+
+        '<div class="chip">'+ultimo.flor.info.emoji+'<span class="n">'+esc(ultimo.flor.info.nombre)+'</span></div></div>'+
+        (ultimo.urgenciasActivas && ultimo.urgenciasActivas.length ? '<p style="color:var(--burdeos); font-weight:600;">⚠ Ese día se marcó al menos una señal de atención médica inmediata.</p>' : '')+
+        '</div>';
+    }
+
+    var qrSeccion = '<div class="panel"><h3>Código QR para tu médico</h3>'+
+      '<p class="muted">Genera un código con tu perfil y tus últimos controles para que tu médico lo escanee en la consulta.</p>'+
+      (estado.mostrandoQR
+        ? '<div id="qr-contenedor" class="qr-contenedor"></div><p class="muted" style="text-align:center;">Válido con los datos de este momento — vuelve a generarlo si registras un control nuevo.</p><button class="btn-texto" data-accion="ocultar-qr">Ocultar código</button>'
+        : '<button class="btn-secundaria" data-accion="mostrar-qr">Generar código QR</button>')+
+      '</div>';
+
+    return encabezado(p.nombre) +
+      recordatorio+
+      '<div class="panel"><h2>'+esc(p.nombre)+' '+esc(p.apellido)+'</h2>'+
+      '<div class="ficha-dato"><span class="k">Cédula</span><span class="v">'+esc(p.cedula)+'</span></div>'+
+      '<div class="ficha-dato"><span class="k">Edad</span><span class="v">'+(edad!=null?edad+" años":"—")+'</span></div>'+
+      '<div class="ficha-dato"><span class="k">Semanas de embarazo</span><span class="v">'+(semanas!=null?semanas+" semanas":"—")+'</span></div>'+
+      '<div class="ficha-dato"><span class="k">Contacto de emergencia</span><span class="v">'+esc(p.ceNombre)+' '+esc(p.ceApellido)+'</span></div>'+
+      '</div>'+
+      resumenUltimo+
+      '<button class="btn-primaria" data-accion="iniciar-control">Registrar control de hoy</button>'+
+      '<div class="btn-fila"><button class="btn-secundaria" data-accion="ver-historial">Ver historial ('+registros.length+')</button></div>'+
+      qrSeccion;
+  }
+
+  // ---------- control diario ----------
+  function vistaControl(){
+    var paso = estado.controlPaso;
+    var barra = '<div class="progreso">'+[1,2,3].map(function(n){return '<div class="paso'+(n<=paso?" activo":"")+'"></div>';}).join("")+'</div>';
+    var contenido = "";
+    if(paso===1){
+      contenido = '<div class="panel"><h2>Presión arterial</h2><p class="muted">Indica tu presión arterial de hoy (ej: 120/80).</p>'+
+        '<div class="fila2"><div class="campo"><label>Sistólica</label><input type="number" id="in-sistolica" value="'+esc(estado.controlDatos.sistolica)+'" placeholder="120"></div>'+
+        '<div class="campo"><label>Diastólica</label><input type="number" id="in-diastolica" value="'+esc(estado.controlDatos.diastolica)+'" placeholder="80"></div></div>'+
+        '<div class="leyenda">'+
+        '<div class="fila"><span class="e">✅</span><span><b>Normal/estable:</b> menos de 120/80 mmHg</span></div>'+
+        '<div class="fila"><span class="e">⚠️</span><span><b>Requiere vigilancia:</b> 120–139 / 80–89 mmHg</span></div>'+
+        '<div class="fila"><span class="e">❌</span><span><b>Sospecha de preeclampsia:</b> 140/90 mmHg o más</span></div>'+
+        '</div></div>';
+    } else if(paso===2){
+      contenido = '<div class="panel"><h2>¿Cómo te sientes hoy?</h2>'+PREGUNTAS_SINTOMAS.map(function(p){return preguntaSN(p, estado.controlDatos.sintomas[p.id]);}).join("")+'</div>';
+    } else {
+      contenido = '<div class="panel"><h2>¿Debes acudir al médico?</h2><p class="muted">Aunque solo marques 1 respuesta como "Sí", acude al médico.</p>'+
+        PREGUNTAS_URGENCIA.map(function(p){return preguntaSN(p, estado.controlDatos.urgencia[p.id]);}).join("")+'</div>';
+    }
+    var botonSig = paso<3 ? '<button class="btn-primaria" data-accion="control-siguiente">Continuar</button>' : '<button class="btn-primaria" data-accion="control-finalizar">Ver resultado</button>';
+    return encabezado("Control diario") + barra + contenido +
+      '<div class="btn-fila"><button class="btn-secundaria" data-accion="control-anterior">'+(paso===1?"Cancelar":"Atrás")+'</button></div>'+
+      botonSig;
+  }
+  function preguntaSN(p,v){
+    return '<div class="pregunta"><p class="texto">'+esc(p.texto)+'</p><div class="sn">'+
+      '<label class="opcion si'+(v==="si"?" marcada":"")+'"><input type="radio" name="q_'+p.id+'" value="si" '+(v==="si"?"checked":"")+' data-id="'+p.id+'">Sí</label>'+
+      '<label class="opcion no'+(v==="no"?" marcada":"")+'"><input type="radio" name="q_'+p.id+'" value="no" '+(v==="no"?"checked":"")+' data-id="'+p.id+'">No</label>'+
+      '</div></div>';
+  }
+
+  // ---------- resultado ----------
+  function vistaResultado(){
+    var p = estado.perfil, cd = estado.controlDatos;
+    var sis = Number(cd.sistolica), dia = Number(cd.diastolica);
+    var bp = clasificarBP(cd.sistolica, cd.diastolica);
+    var flor = clasificarFlor(cd.sintomas, bp);
+    var urgentes = urgenciasActivas(cd.urgencia);
+    var tieneUrgencia = urgentes.length>0;
+    var tieneSensible = urgentes.some(function(p){return p.sensible;});
+    var anterior = estado.registros.length ? estado.registros[0] : null;
+    var tendencia = detectarAumentoTension(sis, dia, bp, anterior);
+
+    var html = encabezado("Resultado del día") +
+      '<div class="resultado-bp '+bp.clave+'"><div class="etiqueta">'+bp.etiqueta+'</div>'+
+      '<p style="margin:0;">'+esc(cd.sistolica)+'/'+esc(cd.diastolica)+' mmHg — '+bp.texto+'</p></div>'+
+      '<div class="flor-resultado '+flor.nivel+'"><span class="emoji">'+flor.info.emoji+'</span>'+
+      '<div class="nivel">'+flor.info.nombre+'</div><p style="margin:6px 0 0;">'+flor.info.desc+'</p></div>';
+
+    if(tendencia){
+      html += '<div class="alerta-tendencia"><h3>📈 Tu presión subió respecto al control anterior</h3>'+
+        '<p>Antes ('+esc(formatoFecha(tendencia.anterior.fecha))+'): '+esc(tendencia.anterior.sistolica)+'/'+esc(tendencia.anterior.diastolica)+' mmHg → Ahora: '+esc(cd.sistolica)+'/'+esc(cd.diastolica)+' mmHg.</p>'+
+        '<p>Vigila los síntomas de cerca y coméntaselo a tu médico, aunque el valor de hoy no sea alto por sí solo.</p>'+
+        '</div>';
+    }
+
+    if(tieneUrgencia){
+      html += '<div class="alerta-medica"><h3>⚠ Debes acudir al médico</h3>'+
+        '<p>Marcaste "Sí" en al menos una señal que requiere atención médica. Aunque sea solo una, acude al médico o a tu centro de salud lo antes posible:</p>'+
+        '<ul>'+urgentes.map(function(p){return '<li>'+esc(p.texto)+'</li>';}).join("")+'</ul>'+
+        (tieneSensible ? '<p><b>Si tuviste pensamientos de hacerte daño a ti o al bebé, no esperes:</b> busca ayuda ahora mismo con tu contacto de emergencia, tu médico o el centro de salud más cercano.</p>' : '')+
+        (p.ceTelefono ? '<a class="btn-llamar" href="'+telHref(p.ceTelefono)+'">📞 Llamar a '+esc(p.ceNombre)+' ('+esc(p.ceTelefono)+')</a>' : '')+
+        '</div>';
+    }
+    html += '<button class="btn-primaria" data-accion="guardar-control" '+(estado.guardando?"disabled":"")+'>'+(estado.guardando?"Guardando…":"Guardar y continuar")+'</button>';
+    return html;
+  }
+
+  // ---------- historial ----------
+  function vistaHistorial(){
+    var registros = estado.registros; // ya vienen ordenados desc
+    var lista = "";
+    if(registros.length===0){
+      lista = '<div class="vacio"><span class="emoji">📋</span>Todavía no hay controles registrados.</div>';
+    } else {
+      lista = registros.map(function(r,i){
+        return '<button class="historial-item" data-accion="ver-detalle" data-idx="'+i+'">'+
+          '<span class="flor">'+r.flor.info.emoji+'</span>'+
+          '<span class="datos"><span class="fecha">'+esc(formatoFecha(r.fecha))+'</span><br>'+
+          '<span class="bp"><span class="punto '+r.bp.clave+'"></span>'+esc(r.sistolica)+'/'+esc(r.diastolica)+' mmHg'+
+          (r.urgenciasActivas.length ? ' · atención médica' : '')+'</span></span></button>';
+      }).join("");
+    }
+    return encabezado(estado.perfil.nombre) + '<div class="panel"><h2>Historial de controles</h2>'+lista+'</div>'+
+      '<button class="btn-texto" data-accion="volver-panel">← Volver</button>';
+  }
+
+  // ---------- detalle ----------
+  function vistaDetalle(){
+    var r = estado.registros[estado.registroVisto];
+    if(!r){ estado.pantalla="historial"; return vistaHistorial(); }
+    var sintomasSi = PREGUNTAS_SINTOMAS.filter(function(p){return r.sintomas[p.id]==="si";});
+    var urgSi = r.urgenciasActivas;
+    return encabezado(formatoFecha(r.fecha)) +
+      '<div class="resultado-bp '+r.bp.clave+'"><div class="etiqueta">'+r.bp.etiqueta+'</div><p style="margin:0;">'+esc(r.sistolica)+'/'+esc(r.diastolica)+' mmHg</p></div>'+
+      '<div class="flor-resultado '+r.flor.nivel+'"><span class="emoji">'+r.flor.info.emoji+'</span><div class="nivel">'+r.flor.info.nombre+'</div></div>'+
+      '<div class="panel"><h3>Síntomas marcados como "Sí"</h3>'+
+      (sintomasSi.length ? '<ul style="padding-left:20px; margin:0;">'+sintomasSi.map(function(p){return '<li>'+esc(p.texto)+'</li>';}).join("")+'</ul>' : '<p class="muted">Ninguno.</p>')+'</div>'+
+      (urgSi.length ? '<div class="alerta-medica"><h3>Se marcó atención médica</h3><ul>'+urgSi.map(function(p){return '<li>'+esc(p.texto)+'</li>';}).join("")+'</ul></div>' : '')+
+      '<button class="btn-texto" data-accion="volver-historial">← Volver al historial</button>';
+  }
+
+  // ---------- eventos ----------
+  function ligarEventos(){
+    app.querySelectorAll("[data-accion]").forEach(function(el){
+      el.addEventListener("click", function(){
+        var a = el.getAttribute("data-accion");
+        if(a==="tab-login"){ estado.authTab="login"; estado.authError=""; estado.authInfo=""; render(); }
+        else if(a==="tab-registro"){ estado.authTab="registro"; estado.authError=""; estado.authInfo=""; render(); }
+        else if(a==="olvide-password"){ estado.authTab="recuperar"; estado.authError=""; estado.authInfo=""; render(); }
+        else if(a==="volver-login"){ estado.authTab="login"; estado.authError=""; estado.authInfo=""; render(); }
+        else if(a==="cerrar-sesion"){ signOut(auth); }
+        else if(a==="volver-panel"){ estado.pantalla="panel"; render(); }
+        else if(a==="iniciar-control"){
+          estado.controlPaso=1; estado.controlDatos={sistolica:"",diastolica:"",sintomas:{},urgencia:{}};
+          estado.pantalla="control"; render();
+        }
+        else if(a==="ver-historial"){ estado.pantalla="historial"; render(); }
+        else if(a==="editar-consulta"){ estado.editandoConsulta=true; render(); }
+        else if(a==="cancelar-consulta"){ estado.editandoConsulta=false; render(); }
+        else if(a==="mostrar-qr"){ estado.mostrandoQR=true; render(); }
+        else if(a==="ocultar-qr"){ estado.mostrandoQR=false; render(); }
+        else if(a==="ver-detalle"){ estado.registroVisto=Number(el.getAttribute("data-idx")); estado.pantalla="detalle"; render(); }
+        else if(a==="volver-historial"){ estado.pantalla="historial"; render(); }
+        else if(a==="control-anterior"){
+          if(estado.controlPaso===1){ estado.pantalla="panel"; } else { estado.controlPaso--; }
+          render();
+        }
+        else if(a==="control-siguiente"){
+          if(estado.controlPaso===1){
+            var sis=document.getElementById("in-sistolica").value, dia=document.getElementById("in-diastolica").value;
+            if(!sis||!dia){ alert("Indica la presión sistólica y diastólica."); return; }
+            estado.controlDatos.sistolica=sis; estado.controlDatos.diastolica=dia;
+          } else if(estado.controlPaso===2){
+            var falt=PREGUNTAS_SINTOMAS.some(function(p){return !estado.controlDatos.sintomas[p.id];});
+            if(falt){ alert("Responde todas las preguntas para continuar."); return; }
+          }
+          estado.controlPaso++; render();
+        }
+        else if(a==="control-finalizar"){
+          var faltU=PREGUNTAS_URGENCIA.some(function(p){return !estado.controlDatos.urgencia[p.id];});
+          if(faltU){ alert("Responde todas las preguntas para continuar."); return; }
+          estado.pantalla="resultado"; render();
+        }
+        else if(a==="guardar-control"){ guardarRegistroControl(); }
+      });
+    });
+
+    app.querySelectorAll(".sn input[type=radio]").forEach(function(inp){
+      inp.addEventListener("change", function(){
+        var id=inp.getAttribute("data-id"), val=inp.value;
+        if(estado.controlPaso===2) estado.controlDatos.sintomas[id]=val;
+        else if(estado.controlPaso===3) estado.controlDatos.urgencia[id]=val;
+        render();
+      });
+    });
+
+    var formAuth = document.getElementById("form-auth");
+    if(formAuth){
+      formAuth.addEventListener("submit", function(ev){
+        ev.preventDefault();
+        var email = document.getElementById("auth-email").value.trim();
+        var pass = document.getElementById("auth-pass").value;
+        var btn = document.getElementById("auth-submit");
+        btn.disabled = true; estado.authError=""; estado.authInfo="";
+        var accion = estado.authTab==="login"
+          ? signInWithEmailAndPassword(auth,email,pass)
+          : createUserWithEmailAndPassword(auth,email,pass);
+        accion.catch(function(err){
+          estado.authError = mensajeErrorAuth(err.code);
+          render();
+        });
+      });
+    }
+
+    var formRecuperar = document.getElementById("form-recuperar");
+    if(formRecuperar){
+      formRecuperar.addEventListener("submit", function(ev){
+        ev.preventDefault();
+        var email = document.getElementById("recuperar-email").value.trim();
+        var btn = document.getElementById("recuperar-submit");
+        btn.disabled = true; estado.authError=""; estado.authInfo="";
+        sendPasswordResetEmail(auth, email).then(function(){
+          estado.authInfo = "Si existe una cuenta con ese correo, te enviamos un enlace para restablecer la contraseña. Revisa también la carpeta de spam.";
+          render();
+        }).catch(function(err){
+          if(err.code === "auth/user-not-found"){
+            // No revelamos si el correo existe o no, por privacidad.
+            estado.authInfo = "Si existe una cuenta con ese correo, te enviamos un enlace para restablecer la contraseña. Revisa también la carpeta de spam.";
+          } else {
+            estado.authError = mensajeErrorAuth(err.code);
+            btn.disabled = false;
+          }
+          render();
+        });
+      });
+    }
+
+    var formPerfil = document.getElementById("form-perfil");
+    if(formPerfil){
+      formPerfil.addEventListener("submit", function(ev){
+        ev.preventDefault();
+        var fd = new FormData(formPerfil);
+        var perfil = {
+          nombre:fd.get("nombre"), apellido:fd.get("apellido"), cedula:fd.get("cedula"),
+          fechaNacimiento:fd.get("fechaNacimiento"), fur:fd.get("fur"), direccion:fd.get("direccion"),
+          telefono:fd.get("telefono"), ocupacion:fd.get("ocupacion"),
+          ceNombre:fd.get("ceNombre"), ceApellido:fd.get("ceApellido"), ceTelefono:fd.get("ceTelefono"),
+          proximaConsulta: fd.get("proximaConsulta") || ""
+        };
+        setDoc(doc(dbase,"usuarias",uidActual), perfil).then(function(){
+          estado.perfil = perfil;
+          estado.pantalla = "panel";
+          suscribirRegistros();
+          render();
+        });
+      });
+    }
+
+    var formConsulta = document.getElementById("form-consulta");
+    if(formConsulta){
+      formConsulta.addEventListener("submit", function(ev){
+        ev.preventDefault();
+        var fecha = new FormData(formConsulta).get("proximaConsulta") || "";
+        setDoc(doc(dbase,"usuarias",uidActual), { proximaConsulta: fecha }, { merge:true }).then(function(){
+          estado.perfil.proximaConsulta = fecha;
+          estado.editandoConsulta = false;
+          render();
+        });
+      });
+    }
+
+    renderizarQRSiCorresponde();
+  }
+
+  // ---------- código QR para el médico ----------
+  function b64EncodeUnicode(str){
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(m,p1){ return String.fromCharCode("0x"+p1); }));
+  }
+  function toBase64Url(b64){ return b64.replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); }
+
+  function urlDatosQR(){
+    var resumen = {
+      generado: new Date().toISOString(),
+      perfil: estado.perfil,
+      registros: estado.registros.slice(0,5) // últimos 5, por el límite de tamaño de un QR
+    };
+    var b64 = toBase64Url(b64EncodeUnicode(JSON.stringify(resumen)));
+    var base = location.href.split("#")[0].replace(/[^\/]*$/, "");
+    return base + "visor.html#" + b64;
+  }
+
+  function renderizarQRSiCorresponde(){
+    var cont = document.getElementById("qr-contenedor");
+    if(!cont) return;
+    cont.innerHTML = "";
+    if(typeof QRCode === "undefined"){
+      cont.innerHTML = '<p class="muted">No se pudo cargar el generador de código QR. Verifica tu conexión.</p>';
+      return;
+    }
+    new QRCode(cont, { text: urlDatosQR(), width:200, height:200, correctLevel: QRCode.CorrectLevel.M });
+  }
+
+  function mensajeErrorAuth(code){
+    var m = {
+      "auth/invalid-email":"El correo no es válido.",
+      "auth/user-not-found":"No existe una cuenta con ese correo.",
+      "auth/wrong-password":"Contraseña incorrecta.",
+      "auth/invalid-credential":"Correo o contraseña incorrectos.",
+      "auth/email-already-in-use":"Ya existe una cuenta con ese correo. Inicia sesión.",
+      "auth/weak-password":"La contraseña debe tener al menos 6 caracteres."
+    };
+    return m[code] || "Ocurrió un error. Intenta de nuevo.";
+  }
+
+  function guardarRegistroControl(){
+    var cd = estado.controlDatos;
+    var bp = clasificarBP(cd.sistolica, cd.diastolica);
+    var flor = clasificarFlor(cd.sintomas, bp);
+    var urgentes = urgenciasActivas(cd.urgencia);
+    var registro = {
+      fecha: fechaHoyISO(), sistolica: cd.sistolica, diastolica: cd.diastolica,
+      bp: bp, sintomas: cd.sintomas, urgencia: cd.urgencia,
+      urgenciasActivas: urgentes, flor: flor, creado: Date.now()
+    };
+    // Firestore aplica la escritura a la caché local de inmediato (el
+    // historial la refleja al instante mediante onSnapshot), aunque la
+    // promesa solo se resuelve cuando el servidor confirma. Por eso no
+    // esperamos aquí: si no hay conexión, quedaría "colgado" hasta que
+    // vuelva internet. Navegamos ya y solo mostramos un error si la
+    // escritura es realmente inválida (no por falta de red).
+    addDoc(collection(dbase,"usuarias",uidActual,"registros"), registro).catch(function(err){
+      console.error("Error al guardar el control:", err);
+      if(err.code !== "unavailable"){
+        alert("Hubo un problema al guardar este control. Vuelve a intentarlo desde el historial.");
+      }
+    });
+    estado.guardando = false;
+    estado.pantalla = "panel";
+    render();
+  }
+
+  function suscribirRegistros(){
+    if(unsubRegistros) unsubRegistros();
+    var q = query(collection(dbase,"usuarias",uidActual,"registros"), orderBy("fecha","desc"));
+    unsubRegistros = onSnapshot(q, function(snap){
+      estado.registros = snap.docs.map(function(d){ return d.data(); });
+      if(estado.pantalla==="panel" || estado.pantalla==="historial") render();
+    });
+  }
+
+  // ---------- ciclo de autenticación ----------
+  onAuthStateChanged(auth, function(user){
+    if(unsubRegistros){ unsubRegistros(); unsubRegistros=null; }
+    if(!user){
+      uidActual = null; estado.perfil = null; estado.registros = [];
+      estado.pantalla = "auth";
+      render();
+      return;
+    }
+    uidActual = user.uid;
+    getDoc(doc(dbase,"usuarias",uidActual)).then(function(snap){
+      if(snap.exists()){
+        estado.perfil = snap.data();
+        estado.pantalla = "panel";
+        suscribirRegistros();
+      } else {
+        estado.pantalla = "completarPerfil";
+      }
+      render();
+    });
+  });
+</script>
+</body>
+</html>
