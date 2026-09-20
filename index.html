@@ -115,6 +115,14 @@
   .alerta-tendencia h3{color:var(--ambar); font-size:1.05rem; margin-bottom:6px;}
 
   .qr-contenedor{display:flex; justify-content:center; padding:14px 0; background:#fff; border-radius:12px;}
+
+  .checks-grid{display:flex; flex-wrap:wrap; gap:8px 14px; margin-top:6px;}
+  .check-opcion{display:flex; align-items:center; gap:6px; font-size:0.88rem; font-weight:500; color:var(--ciruela); flex:1 1 45%; min-width:150px;}
+  .check-opcion input{width:auto;}
+  .sn-inline{display:flex; gap:20px; margin-top:6px;}
+  .opcion-inline{display:flex; align-items:center; gap:6px; font-weight:500; font-size:0.92rem; color:var(--ciruela);}
+  .opcion-inline input{width:auto;}
+  .detalle-condicional{background:var(--crema); border-radius:9px; padding:12px; margin-top:-4px;}
   .chip-fila{display:flex; gap:8px; margin:14px 0;}
   .chip{flex:1; text-align:center; padding:10px 6px; border-radius:9px; background:var(--crema); border:1.5px solid var(--linea); font-weight:600; font-size:1.05rem;}
   .chip .n{font-size:0.72rem; font-weight:500; color:var(--ciruela-suave); display:block; margin-top:2px;}
@@ -182,14 +190,14 @@
     orderBy, onSnapshot
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-   const firebaseConfig = {
-         apiKey: "AIzaSyBdL3fhRLfbh8cCBJjZoXP8p3BATry1DXg",
-         authDomain: "mama-alerta.firebaseapp.com",
-         projectId: "mama-alerta",
-         storageBucket: "mama-alerta.firebasestorage.app",
-         messagingSenderId: "458375340048",
-         appId: "1:458375340048:web:cd18a9960cbabc7de2aa95"
-       };
+  const firebaseConfig = {
+    apiKey: "TU_API_KEY",
+    authDomain: "TU_PROYECTO.firebaseapp.com",
+    projectId: "TU_PROYECTO",
+    storageBucket: "TU_PROYECTO.appspot.com",
+    messagingSenderId: "TU_SENDER_ID",
+    appId: "TU_APP_ID"
+  };
 
   const fbApp = initializeApp(firebaseConfig);
   const auth = getAuth(fbApp);
@@ -355,6 +363,21 @@
   }
 
   // ---------- completar perfil (primera vez) ----------
+  var CONDICIONES_PERSONALES = [
+    { id:"hipertension", texto:"Hipertensión arterial" },
+    { id:"diabetes", texto:"Diabetes mellitus" },
+    { id:"asma", texto:"Asma bronquial" },
+    { id:"convulsiones", texto:"Episodios convulsivos previos" },
+    { id:"tiroides", texto:"Patología tiroidea" }
+  ];
+  var TIPOS_ETS = [
+    { id:"vph", texto:"VPH" },
+    { id:"sifilis", texto:"Sífilis" },
+    { id:"gonorrea", texto:"Gonorrea" },
+    { id:"chancro", texto:"Chancro" },
+    { id:"herpes", texto:"Herpes genital" }
+  ];
+
   function vistaCompletarPerfil(){
     return encabezado(auth.currentUser ? auth.currentUser.email : "") +
       '<form id="form-perfil" class="panel">'+
@@ -378,6 +401,49 @@
       '<div class="campo"><label>Apellido</label><input type="text" name="ceApellido" required></div>'+
       '</div>'+
       '<div class="campo"><label>Teléfono</label><input type="tel" name="ceTelefono" required></div>'+
+
+      '<h3 style="margin-top:18px;">Antecedentes personales</h3>'+
+      '<div class="campo"><label>Sufres de: (puedes marcar varias)</label>'+
+      '<div class="checks-grid">'+
+      CONDICIONES_PERSONALES.map(function(c){ return '<label class="check-opcion"><input type="checkbox" name="antecedentesPersonales" value="'+c.id+'"> '+c.texto+'</label>'; }).join("")+
+      '</div></div>'+
+
+      '<div class="campo"><label>¿Te han hecho alguna cirugía anteriormente? (las cesáreas no cuentan)</label>'+
+      '<div class="sn-inline">'+
+      '<label class="opcion-inline"><input type="radio" name="cirugiaPrevia" value="si" data-detalle="detalle-cirugia"> Sí</label>'+
+      '<label class="opcion-inline"><input type="radio" name="cirugiaPrevia" value="no" data-detalle="detalle-cirugia" checked> No</label>'+
+      '</div></div>'+
+      '<div class="campo detalle-condicional" id="detalle-cirugia" style="display:none;"><label>¿Cuál cirugía?</label><input type="text" name="cirugiaPreviaDetalle"></div>'+
+
+      '<div class="campo"><label>¿Eres alérgica a algún medicamento?</label>'+
+      '<div class="sn-inline">'+
+      '<label class="opcion-inline"><input type="radio" name="alergiaMedicamento" value="si" data-detalle="detalle-alergia"> Sí</label>'+
+      '<label class="opcion-inline"><input type="radio" name="alergiaMedicamento" value="no" data-detalle="detalle-alergia" checked> No</label>'+
+      '</div></div>'+
+      '<div class="campo detalle-condicional" id="detalle-alergia" style="display:none;"><label>¿A cuál medicamento?</label><input type="text" name="alergiaMedicamentoDetalle"></div>'+
+
+      '<h3 style="margin-top:18px;">Antecedentes ginecoobstétricos</h3>'+
+      '<div class="fila2">'+
+      '<div class="campo"><label>¿A qué edad te desarrollaste? (años)</label><input type="number" name="menarquiaEdad" min="6" max="20"></div>'+
+      '<div class="campo"><label>¿Cuántos días te dura la menstruación?</label><input type="number" name="duracionMenstruacion" min="1" max="15"></div>'+
+      '</div>'+
+      '<div class="fila2">'+
+      '<div class="campo"><label>¿A qué edad tuviste tu primera relación sexual?</label><input type="number" name="edadPrimeraRelacion" min="8" max="60"></div>'+
+      '<div class="campo"><label>¿Cuántas parejas sexuales has tenido?</label><input type="number" name="numeroParejasSexuales" min="0"></div>'+
+      '</div>'+
+      '<div class="campo"><label>¿Has sido diagnosticada con alguna enfermedad de transmisión sexual?</label>'+
+      '<div class="sn-inline">'+
+      '<label class="opcion-inline"><input type="radio" name="etsDiagnostico" value="si" data-detalle="detalle-ets"> Sí</label>'+
+      '<label class="opcion-inline"><input type="radio" name="etsDiagnostico" value="no" data-detalle="detalle-ets" checked> No</label>'+
+      '</div></div>'+
+      '<div class="campo detalle-condicional" id="detalle-ets" style="display:none;">'+
+      '<label>¿Cuál(es)? (VPH, sífilis, gonorrea, chancro, herpes genital, entre otras)</label>'+
+      '<div class="checks-grid">'+
+      TIPOS_ETS.map(function(e){ return '<label class="check-opcion"><input type="checkbox" name="etsTipos" value="'+e.id+'"> '+e.texto+'</label>'; }).join("")+
+      '</div>'+
+      '<input type="text" name="etsOtraDetalle" placeholder="Otra (especifica)" style="margin-top:8px;">'+
+      '</div>'+
+
       '<h3 style="margin-top:18px;">Próxima consulta</h3>'+
       '<div class="campo"><label>Fecha de tu próxima consulta (opcional)</label><input type="date" name="proximaConsulta"></div>'+
       '<button type="submit" class="btn-primaria">Guardar y continuar</button>'+
@@ -650,6 +716,14 @@
 
     var formPerfil = document.getElementById("form-perfil");
     if(formPerfil){
+      // Mostrar/ocultar los campos de detalle según la respuesta Sí/No
+      formPerfil.querySelectorAll("input[data-detalle]").forEach(function(radio){
+        radio.addEventListener("change", function(){
+          var det = document.getElementById(radio.getAttribute("data-detalle"));
+          if(det) det.style.display = (radio.value === "si" && radio.checked) ? "block" : "none";
+        });
+      });
+
       formPerfil.addEventListener("submit", function(ev){
         ev.preventDefault();
         var fd = new FormData(formPerfil);
@@ -658,6 +732,18 @@
           fechaNacimiento:fd.get("fechaNacimiento"), fur:fd.get("fur"), direccion:fd.get("direccion"),
           telefono:fd.get("telefono"), ocupacion:fd.get("ocupacion"),
           ceNombre:fd.get("ceNombre"), ceApellido:fd.get("ceApellido"), ceTelefono:fd.get("ceTelefono"),
+          antecedentesPersonales: fd.getAll("antecedentesPersonales"),
+          cirugiaPrevia: fd.get("cirugiaPrevia") || "no",
+          cirugiaPreviaDetalle: fd.get("cirugiaPreviaDetalle") || "",
+          alergiaMedicamento: fd.get("alergiaMedicamento") || "no",
+          alergiaMedicamentoDetalle: fd.get("alergiaMedicamentoDetalle") || "",
+          menarquiaEdad: fd.get("menarquiaEdad") || "",
+          duracionMenstruacion: fd.get("duracionMenstruacion") || "",
+          edadPrimeraRelacion: fd.get("edadPrimeraRelacion") || "",
+          numeroParejasSexuales: fd.get("numeroParejasSexuales") || "",
+          etsDiagnostico: fd.get("etsDiagnostico") || "no",
+          etsTipos: fd.getAll("etsTipos"),
+          etsOtraDetalle: fd.get("etsOtraDetalle") || "",
           proximaConsulta: fd.get("proximaConsulta") || ""
         };
         setDoc(doc(dbase,"usuarias",uidActual), perfil).then(function(){
@@ -739,9 +825,14 @@
       "auth/wrong-password":"Contraseña incorrecta.",
       "auth/invalid-credential":"Correo o contraseña incorrectos.",
       "auth/email-already-in-use":"Ya existe una cuenta con ese correo. Inicia sesión.",
-      "auth/weak-password":"La contraseña debe tener al menos 6 caracteres."
+      "auth/weak-password":"La contraseña debe tener al menos 6 caracteres.",
+      "auth/network-request-failed":"No hay conexión a internet. Verifica tu red e intenta de nuevo.",
+      "auth/operation-not-allowed":"El inicio de sesión con correo y contraseña no está habilitado en Firebase (revisa Authentication → Sign-in method).",
+      "auth/unauthorized-domain":"Este sitio no está autorizado en Firebase (revisa Authentication → Settings → Authorized domains).",
+      "auth/invalid-api-key":"La configuración de Firebase (apiKey) es inválida. Revisa que se haya copiado bien en index.html.",
+      "auth/configuration-not-found":"Falta configuración en el proyecto de Firebase (revisa que Authentication esté habilitado)."
     };
-    return m[code] || "Ocurrió un error. Intenta de nuevo.";
+    return m[code] || ("Ocurrió un error ("+code+"). Intenta de nuevo.");
   }
 
   function guardarRegistroControl(){
