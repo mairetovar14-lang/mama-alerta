@@ -1,0 +1,17 @@
+{
+  "name": "Mamá Alerta",
+  "short_name": "Mamá Alerta",
+  "description": "Control prenatal diario, con alertas de presión arterial y señales de atención médica.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fbf3ee",
+  "theme_color": "#8f3f52",
+  "lang": "es",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

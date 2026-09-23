@@ -5,15 +5,23 @@
 // automática, gracias a la persistencia offline habilitada en la app —
 // este archivo solo se encarga de que la "cáscara" de la app cargue.
 
-const CACHE_NAME = "mama-alerta-v1";
+const CACHE_NAME = "mama-alerta-v2";
 
 // Recursos que sabemos de antemano que hacen falta para que la app
-// arranque (el SDK de Firebase). La propia página HTML se agrega a la
-// caché automáticamente la primera vez que se visita (ver "fetch" abajo).
+// arranque (el SDK de Firebase, el manifest y los íconos de la app
+// instalada). La propia página HTML se agrega a la caché automáticamente
+// la primera vez que se visita (ver "fetch" abajo).
 const PRECARGA = [
   "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js",
   "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js",
-  "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
+  "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js",
+  "./index.html",
+  "./firebase-config.js",
+  "./manifest.json",
+  "./icon-192.png",
+  "./icon-512.png",
+  "./icon-512-maskable.png",
+  "./apple-touch-icon.png"
 ];
 
 self.addEventListener("install", (event) => {

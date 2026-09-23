@@ -1,10 +1,17 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mamá Alerta</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#8f3f52">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mamá Alerta">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" href="./icon-192.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -97,6 +104,16 @@
     background:var(--ambar-fondo); color:var(--ambar); font-size:0.82rem; font-weight:600;
     padding:9px 14px; text-align:center;
   }
+  .banner-instalar{
+    display:flex; align-items:center; gap:10px; justify-content:space-between;
+    background:var(--rosa-profunda); color:#fff; font-size:0.85rem; font-weight:600;
+    padding:10px 14px; text-align:left;
+  }
+  .banner-instalar button{
+    background:#fff; color:var(--rosa-profunda); border:none; border-radius:8px;
+    padding:8px 12px; font-size:0.82rem; font-weight:700; white-space:nowrap;
+  }
+  .banner-instalar .cerrar{background:none; color:#fff; padding:4px 6px; font-weight:700; opacity:0.85;}
 
   .recordatorio{
     display:flex; align-items:center; justify-content:space-between; gap:10px;
@@ -170,12 +187,11 @@
 
 <!--
   ====================================================================
-  CONFIGURACIÓN DE FIREBASE
-  Sustituye estos valores por los de tu proyecto (Firebase console →
-  Configuración del proyecto → Tus apps → SDK setup and configuration).
+  La configuración de Firebase vive en firebase-config.js (edítala solo
+  ahí, una sola vez). Este archivo no la contiene.
   Debes tener habilitados:
     - Authentication → Sign-in method → Correo electrónico/contraseña
-    - Firestore Database (modo producción, con las reglas de abajo)
+    - Firestore Database (modo producción, con las reglas de firestore.rules)
   ====================================================================
 -->
 <script type="module">
@@ -189,15 +205,7 @@
     doc, getDoc, setDoc, collection, addDoc, query,
     orderBy, onSnapshot
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyBdL3fhRLfbh8cCBJjZoXP8p3BATry1DXg",
-    authDomain: "mama-alerta.firebaseapp.com",
-    projectId: "mama-alerta",
-    storageBucket: "mama-alerta.firebasestorage.app",
-    messagingSenderId: "458375340048",
-    appId: "1:458375340048:web:cd18a9960cbabc7de2aa95"
-  };
+  import { firebaseConfig } from "./firebase-config.js";
 
   const fbApp = initializeApp(firebaseConfig);
   const auth = getAuth(fbApp);
@@ -272,7 +280,8 @@
   // ---------- estado ----------
   var estado = { pantalla:"cargando", authTab:"login", authError:"", authInfo:"", perfil:null, registros:[], registroCargado:false,
     controlPaso:1, controlDatos:{sistolica:"",diastolica:"",sintomas:{},urgencia:{}}, registroVisto:null, guardando:false,
-    editandoConsulta:false, mostrandoQR:false };
+    editandoConsulta:false, mostrandoQR:false, mostrarInstalar:false };
+  var deferredInstallPrompt = null;
   var uidActual = null;
   var unsubRegistros = null;
 
@@ -291,7 +300,12 @@
     var banner = (estado.pantalla!=="cargando" && !navigator.onLine)
       ? '<div class="banner-offline">📶 Sin conexión — lo que registres se guardará y se sincronizará solo al volver internet</div>'
       : '';
-    app.innerHTML = banner + html;
+    var bannerInstalar = (estado.mostrarInstalar && estado.pantalla!=="cargando" && estado.pantalla!=="auth")
+      ? '<div class="banner-instalar"><span>📲 Instala esta app en tu teléfono para abrirla más rápido</span>'+
+        '<span style="display:flex; gap:6px;"><button data-accion="instalar-app">Instalar</button>'+
+        '<button class="cerrar" data-accion="cerrar-banner-instalar">✕</button></span></div>'
+      : '';
+    app.innerHTML = banner + bannerInstalar + html;
     document.body.classList.toggle("pantalla-auth", estado.pantalla === "auth");
     ligarEventos();
     window.scrollTo(0,0);
@@ -299,6 +313,21 @@
 
   window.addEventListener("online", render);
   window.addEventListener("offline", render);
+
+  // Muestra el botón "Instalar app" cuando el navegador ofrece la opción
+  // (Android/Chrome). En iPhone no existe este aviso automático: ahí hay
+  // que usar Compartir → "Agregar a pantalla de inicio" desde Safari.
+  window.addEventListener("beforeinstallprompt", function(e){
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    estado.mostrarInstalar = true;
+    render();
+  });
+  window.addEventListener("appinstalled", function(){
+    deferredInstallPrompt = null;
+    estado.mostrarInstalar = false;
+    render();
+  });
 
   // Registra el service worker para que la app pueda abrirse sin
   // conexión después de la primera visita (ver sw.js).
@@ -638,6 +667,17 @@
         else if(a==="cancelar-consulta"){ estado.editandoConsulta=false; render(); }
         else if(a==="mostrar-qr"){ estado.mostrandoQR=true; render(); }
         else if(a==="ocultar-qr"){ estado.mostrandoQR=false; render(); }
+        else if(a==="instalar-app"){
+          if(deferredInstallPrompt){
+            deferredInstallPrompt.prompt();
+            deferredInstallPrompt.userChoice.finally(function(){
+              deferredInstallPrompt = null;
+              estado.mostrarInstalar = false;
+              render();
+            });
+          }
+        }
+        else if(a==="cerrar-banner-instalar"){ estado.mostrarInstalar=false; render(); }
         else if(a==="ver-detalle"){ estado.registroVisto=Number(el.getAttribute("data-idx")); estado.pantalla="detalle"; render(); }
         else if(a==="volver-historial"){ estado.pantalla="historial"; render(); }
         else if(a==="control-anterior"){
@@ -648,6 +688,15 @@
           if(estado.controlPaso===1){
             var sis=document.getElementById("in-sistolica").value, dia=document.getElementById("in-diastolica").value;
             if(!sis||!dia){ alert("Indica la presión sistólica y diastólica."); return; }
+            var sisN=Number(sis), diaN=Number(dia);
+            if(sisN<60||sisN>260||diaN<30||diaN>160){
+              alert("Revisa los valores — no parecen una presión arterial válida (ej: 120/80).");
+              return;
+            }
+            if(diaN>=sisN){
+              alert("La diastólica no puede ser igual o mayor que la sistólica. Revisa los valores (ej: 120/80).");
+              return;
+            }
             estado.controlDatos.sistolica=sis; estado.controlDatos.diastolica=dia;
           } else if(estado.controlPaso===2){
             var falt=PREGUNTAS_SINTOMAS.some(function(p){return !estado.controlDatos.sintomas[p.id];});
@@ -716,6 +765,12 @@
 
     var formPerfil = document.getElementById("form-perfil");
     if(formPerfil){
+      // Evita fechas de nacimiento o de última regla en el futuro
+      var hoyISO = fechaHoyISO();
+      var inNac = formPerfil.querySelector('input[name="fechaNacimiento"]');
+      var inFur = formPerfil.querySelector('input[name="fur"]');
+      if(inNac) inNac.max = hoyISO;
+      if(inFur) inFur.max = hoyISO;
       // Mostrar/ocultar los campos de detalle según la respuesta Sí/No
       formPerfil.querySelectorAll("input[data-detalle]").forEach(function(radio){
         radio.addEventListener("change", function(){
@@ -864,7 +919,7 @@
 
   function suscribirRegistros(){
     if(unsubRegistros) unsubRegistros();
-    var q = query(collection(dbase,"usuarias",uidActual,"registros"), orderBy("fecha","desc"));
+    var q = query(collection(dbase,"usuarias",uidActual,"registros"), orderBy("creado","desc"));
     unsubRegistros = onSnapshot(q, function(snap){
       estado.registros = snap.docs.map(function(d){ return d.data(); });
       if(estado.pantalla==="panel" || estado.pantalla==="historial") render();
