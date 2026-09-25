@@ -27,8 +27,9 @@
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{background:var(--crema); color:var(--ciruela); font-family:"Work Sans",system-ui,sans-serif; line-height:1.5; min-height:100vh;}
-  #app{max-width:480px; margin:0 auto; padding:20px 18px 64px; min-height:100vh;}
-  body.pantalla-auth #app{padding:0; max-width:none;}
+  #app{min-height:100%;}
+  body.pantalla-auth .main-inner{padding:0; max-width:none;}
+  body.pantalla-auth .main-wrap{align-items:center; justify-content:center; display:flex;}
   h1,h2,h3{font-family:"Fraunces",Georgia,serif; font-weight:600; margin:0 0 6px; color:var(--ciruela); line-height:1.15;}
   h1{font-size:1.7rem; font-weight:700;} h2{font-size:1.28rem;} h3{font-size:1.05rem;}
   p{margin:0 0 10px;}
@@ -185,10 +186,127 @@
   .leyenda .fila{display:flex; gap:8px; align-items:flex-start; margin-bottom:6px;} .leyenda .fila span.e{font-size:1.1rem;}
   .cargando{text-align:center; padding:60px 10px; color:var(--ciruela-suave);}
   @media (max-width:360px){ .fila2{grid-template-columns:1fr;} }
+  /* ============================================================
+     BARRA LATERAL + estructura general de la app (pantallas internas)
+     ============================================================ */
+  #shell{display:flex; min-height:100vh;}
+  #sidebar{
+    width:260px; flex:0 0 260px; min-height:100vh;
+    background:linear-gradient(160deg, var(--rosa-profunda) 0%, #5c2438 100%);
+    color:#fff; padding:26px 20px; position:fixed; top:0; left:0; bottom:0;
+    display:flex; flex-direction:column; z-index:40;
+    transform:translateX(0); transition:transform .25s ease;
+  }
+  #sidebar .sb-brand{display:flex; align-items:center; gap:10px; margin-bottom:6px;}
+  #sidebar .sb-brand .mark{font-size:1.6rem;}
+  #sidebar .sb-brand h1{color:#fff; font-size:1.3rem; margin:0;}
+  #sidebar .sb-tagline{color:rgba(255,255,255,0.75); font-size:0.82rem; margin:2px 0 18px;}
+  #sidebar .sb-linea{border:none; border-top:1px solid rgba(255,255,255,0.18); margin:0 0 16px;}
+  #sidebar nav{display:flex; flex-direction:column; gap:4px;}
+  #sidebar nav button{
+    display:flex; align-items:center; gap:12px; background:none; border:none; color:rgba(255,255,255,0.85);
+    font-family:inherit; font-size:0.95rem; font-weight:600; text-align:left; padding:11px 14px;
+    border-radius:12px; cursor:pointer;
+  }
+  #sidebar nav button svg{flex:0 0 auto; opacity:0.9;}
+  #sidebar nav button.activo{background:rgba(255,255,255,0.94); color:var(--rosa-profunda);}
+  #sidebar nav button.activo svg{opacity:1;}
+  #sidebar .sb-ilustracion{margin-top:auto; opacity:0.9; display:flex; justify-content:center;}
+  #sidebar .sb-cerrar{display:none;}
+
+  #capa-sidebar{display:none;}
+
+  .main-wrap{flex:1 1 auto; margin-left:260px; min-height:100vh; display:flex; flex-direction:column;}
+  .main-inner{max-width:760px; width:100%; margin:0 auto; padding:22px 26px 64px; flex:1;}
+  body.pantalla-auth .main-wrap{margin-left:0;}
+  body.pantalla-auth #sidebar{display:none;}
+
+  .btn-hamburguesa{
+    display:none; background:var(--crema-panel); border:1px solid var(--linea); border-radius:10px;
+    width:38px; height:38px; align-items:center; justify-content:center; cursor:pointer; flex:0 0 auto;
+  }
+
+  @media (max-width:900px){
+    #sidebar{transform:translateX(-100%); box-shadow:0 0 40px rgba(0,0,0,0.35);}
+    #shell.sidebar-abierta #sidebar{transform:translateX(0);}
+    #shell.sidebar-abierta #capa-sidebar{
+      display:block; position:fixed; inset:0; background:rgba(30,15,20,0.45); z-index:35;
+    }
+    #sidebar .sb-cerrar{
+      display:flex; align-items:center; justify-content:center; position:absolute; top:18px; right:18px;
+      width:30px; height:30px; border-radius:50%; background:rgba(255,255,255,0.15); color:#fff; border:none; cursor:pointer;
+    }
+    .main-wrap{margin-left:0;}
+    .main-inner{padding:16px 16px 56px;}
+    .btn-hamburguesa{display:flex;}
+  }
+
+  /* ---- barra superior dentro del contenido (logo + usuaria) ---- */
+  .top-bar{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:22px; padding-bottom:14px; border-bottom:1px solid var(--linea);}
+  .top-bar .brand{display:flex; align-items:center; gap:8px;}
+  .top-bar .brand .mark{font-size:1.4rem;}
+  .top-bar .brand h1{font-size:1.35rem; margin:0;}
+  .top-bar .brand-fila{display:flex; align-items:center; gap:10px;}
+  .top-bar .sub{font-size:0.85rem; color:var(--ciruela-suave); text-align:right; cursor:pointer; display:flex; align-items:center; gap:6px;}
+  .top-bar .sub .avatar{width:26px; height:26px; border-radius:50%; background:var(--rosa-suave); color:var(--rosa-profunda); display:flex; align-items:center; justify-content:center;}
+
+  /* ---- ícono circular usado en tarjetas ---- */
+  .icono-badge{
+    width:40px; height:40px; border-radius:50%; background:var(--salvia-fondo,var(--rosa-suave));
+    background:var(--rosa-suave); color:var(--rosa-profunda);
+    display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+  }
+  .icono-badge.ambar{background:var(--ambar-fondo); color:var(--ambar);}
+  .icono-badge.burdeos{background:var(--burdeos-fondo); color:var(--burdeos);}
+  .icono-badge.salvia{background:var(--salvia-fondo); color:var(--salvia);}
+
+  .fila-titulo{display:flex; align-items:center; gap:12px; margin-bottom:4px;}
+  .fila-titulo h3{margin:0;}
+  .fila-titulo.con-accion{justify-content:space-between;}
+  .fila-titulo .titulo-txt{flex:1;}
+
+  .enlace-flecha{
+    display:inline-flex; align-items:center; gap:4px; color:var(--rosa-profunda); font-weight:700;
+    font-size:0.88rem; text-decoration:none; cursor:pointer; background:none; border:none; padding:0;
+  }
+  .btn-primaria.con-icono, .btn-secundaria.con-icono{
+    display:flex; align-items:center; gap:10px; text-align:left;
+  }
+  .btn-primaria.con-icono .ic-izq, .btn-secundaria.con-icono .ic-izq{display:flex; opacity:0.95;}
+  .btn-primaria.con-icono .txt, .btn-secundaria.con-icono .txt{flex:1;}
+  .btn-primaria.con-icono .ic-der, .btn-secundaria.con-icono .ic-der{opacity:0.85;}
+
+  .fila-dato-ic{display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--linea);}
+  .fila-dato-ic:last-child{border-bottom:none;}
+  .fila-dato-ic .ic{width:32px; height:32px; border-radius:9px; background:var(--crema); color:var(--rosa-profunda); display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
+  .fila-dato-ic .txt{flex:1; display:flex; flex-direction:column;}
+  .fila-dato-ic .txt .k{font-size:0.78rem; color:var(--ciruela-suave);}
+  .fila-dato-ic .txt .v{font-weight:700; color:var(--ciruela);}
+
+  .caja-metrica{
+    flex:1; background:var(--crema); border-radius:12px; padding:14px; display:flex; align-items:center; gap:10px;
+  }
+  .caja-metrica.tono-ambar{background:var(--ambar-fondo);}
+  .caja-metrica.tono-burdeos{background:var(--burdeos-fondo);}
+  .caja-metrica.tono-salvia{background:var(--salvia-fondo);}
+  .caja-metrica .ic{flex:0 0 auto;}
+  .caja-metrica .valor{font-weight:700; font-size:1.15rem; line-height:1.1;}
+  .caja-metrica .etiqueta{font-size:0.76rem; color:var(--ciruela-suave);}
+  .caja-metrica.tono-ambar .valor, .caja-metrica.tono-ambar .ic{color:var(--ambar);}
+  .caja-metrica.tono-burdeos .valor, .caja-metrica.tono-burdeos .ic{color:var(--burdeos);}
+  .caja-metrica.tono-salvia .valor, .caja-metrica.tono-salvia .ic{color:var(--salvia);}
+  .fila-metricas{display:flex; gap:12px; margin-top:6px;}
 </style>
+
 </head>
 <body>
-<div id="app"><div class="cargando">Cargando…</div></div>
+<div id="shell">
+  <div id="capa-sidebar"></div>
+  <aside id="sidebar"></aside>
+  <div class="main-wrap">
+    <div class="main-inner" id="app"><div class="cargando">Cargando…</div></div>
+  </div>
+</div>
 
 <!--
   ====================================================================
@@ -248,6 +366,45 @@
   ];
 
   function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+
+  // ---------- íconos (SVG en línea, sin depender de ninguna librería) ----------
+  var ICONOS = {
+    home: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
+    shield: '<path d="M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6Z"/>',
+    calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/>',
+    idCard: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6 16c0-1.5 1.5-2.5 3-2.5s3 1 3 2.5"/><path d="M14 10h4M14 14h4"/>',
+    heartPulse: '<path d="M20 8.5c0-2.5-2-4.5-4.5-4.5-1.6 0-3 .8-3.5 2-.5-1.2-1.9-2-3.5-2C6 4 4 6 4 8.5c0 4 6 8 8 9.5 2-1.5 8-5.5 8-9.5Z"/><path d="M5 12h3l2-3 2 5 2-3h5"/>',
+    personCheck: '<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6"/><path d="M15 14l2 2 4-4"/>',
+    qr: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM19 14h2v2h-2zM14 19h2v2h-2zM19 19h2v2h-2z"/>',
+    clipboard: '<rect x="6" y="4" width="12" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 11h6M9 15h6"/>',
+    arrowRight: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    pencil: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
+    menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+    close: '<path d="M6 6l12 12M18 6L6 18"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>'
+  };
+  function ic(nombre, tam){
+    tam = tam || 20;
+    return '<svg width="'+tam+'" height="'+tam+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+(ICONOS[nombre]||"")+'</svg>';
+  }
+  function iconoBadge(nombre, tono, tam){
+    return '<div class="icono-badge'+(tono?" "+tono:"")+'">'+ic(nombre, tam||20)+'</div>';
+  }
+
+  // Ilustración decorativa simple (silueta + hojas) para el pie de la barra lateral
+  var ILUSTRACION_SIDEBAR =
+    '<svg width="150" height="170" viewBox="0 0 150 170" fill="none" xmlns="http://www.w3.org/2000/svg">'+
+    '<path d="M60 45c-14 0-24 12-24 27 0 10 4 17 4 30 0 14-8 20-8 34 0 8 7 14 18 14h30c11 0 18-6 18-14 0-14-8-20-8-34 0-13 4-20 4-30 0-15-10-27-24-27h-10Z" fill="rgba(255,255,255,0.14)"/>'+
+    '<circle cx="65" cy="34" r="15" fill="rgba(255,255,255,0.16)"/>'+
+    '<path d="M100 120c10-18 30-16 34-2-14 4-24 10-34 2Z" fill="rgba(255,255,255,0.12)"/>'+
+    '<path d="M12 140c8-20 28-18 32-2-13 5-22 10-32 2Z" fill="rgba(255,255,255,0.10)"/>'+
+    '<path d="M75 60c10 8 10 24 0 34" stroke="rgba(255,255,255,0.35)" stroke-width="2" fill="none" stroke-linecap="round"/>'+
+    '</svg>';
+
+
   function fechaHoyISO(){ return new Date().toISOString().slice(0,10); }
   function formatoFecha(iso){ if(!iso) return ""; var p=iso.split("-"); return p[2]+"/"+p[1]+"/"+p[0]; }
   function calcularEdad(f){ if(!f) return null; var h=new Date(),n=new Date(f+"T00:00:00"); var e=h.getFullYear()-n.getFullYear(); var m=h.getMonth()-n.getMonth(); if(m<0||(m===0&&h.getDate()<n.getDate())) e--; return e; }
@@ -285,13 +442,40 @@
   // ---------- estado ----------
   var estado = { pantalla:"cargando", authError:"", authInfo:"", respaldoError:"", perfil:null, registros:[],
     controlPaso:1, controlDatos:{sistolica:"",diastolica:"",sintomas:{},urgencia:{}}, registroVisto:null,
-    editandoConsulta:false, mostrandoQR:false, mostrarInstalar:false, mostrandoRespaldo:false };
+    editandoConsulta:false, mostrandoQR:false, mostrarInstalar:false, mostrandoRespaldo:false, sidebarAbierta:false };
   var deferredInstallPrompt = null;
   var uidActual = null;
   var unsubRegistros = null;
 
   var app = document.getElementById("app");
+  var capaSidebar = document.getElementById("capa-sidebar");
+  if(capaSidebar){
+    capaSidebar.addEventListener("click", function(){ estado.sidebarAbierta = false; render(); });
+  }
   var PANTALLAS_ESTILO_TARJETA = ["restaurar","recuperar","sinRedInicial"];
+
+  var NAV_SIDEBAR = ["completarPerfil","panel","control","resultado","historial","detalle"];
+
+  function renderSidebar(){
+    var sidebarEl = document.getElementById("sidebar");
+    if(!sidebarEl) return;
+    if(NAV_SIDEBAR.indexOf(estado.pantalla)===-1){ sidebarEl.innerHTML=""; sidebarEl.style.display="none"; return; }
+    sidebarEl.style.display="flex";
+    var items = [
+      {accion:"nav-inicio", label:"Inicio", icono:"home", activo:["panel","control","resultado","completarPerfil"].indexOf(estado.pantalla)!==-1},
+      {accion:"nav-historial", label:"Historial", icono:"clock", activo:["historial","detalle"].indexOf(estado.pantalla)!==-1},
+      {accion:"nav-respaldo", label:"Copia de seguridad", icono:"shield", activo:false}
+    ];
+    sidebarEl.innerHTML =
+      '<button class="sb-cerrar" data-accion="cerrar-sidebar">'+ic("close",16)+'</button>'+
+      '<div class="sb-brand"><span class="mark">🌷</span><h1>Mamá Alerta</h1></div>'+
+      '<p class="sb-tagline">Tu control prenatal, día a día.</p>'+
+      '<hr class="sb-linea">'+
+      '<nav>'+ items.map(function(it){
+        return '<button class="'+(it.activo?"activo":"")+'" data-accion="'+it.accion+'">'+ic(it.icono,19)+'<span>'+it.label+'</span></button>';
+      }).join("") +'</nav>'+
+      '<div class="sb-ilustracion">'+ILUSTRACION_SIDEBAR+'</div>';
+  }
 
   function render(){
     var html = "";
@@ -316,6 +500,8 @@
       : '';
     app.innerHTML = banner + bannerInstalar + html;
     document.body.classList.toggle("pantalla-auth", esPantallaTarjeta);
+    document.getElementById("shell").classList.toggle("sidebar-abierta", !!estado.sidebarAbierta);
+    renderSidebar();
     ligarEventos();
     window.scrollTo(0,0);
   }
@@ -350,9 +536,13 @@
 
   function encabezado(sub){
     var puedeSalir = auth.currentUser && !auth.currentUser.isAnonymous;
-    return '<header class="top"><div class="brand"><span class="mark">🌷</span><h1>Mamá Alerta</h1></div>'+
-      (sub ? '<div class="sub"'+(puedeSalir?' data-accion="cerrar-sesion"':'')+'>'+esc(sub)+(puedeSalir?' · salir':'')+'</div>' : '')+
-      '</header>';
+    return '<div class="top-bar">'+
+      '<div class="brand-fila">'+
+      '<button class="btn-hamburguesa" data-accion="abrir-sidebar">'+ic("menu",18)+'</button>'+
+      '<div class="brand"><span class="mark">🌷</span><h1>Mamá Alerta</h1></div>'+
+      '</div>'+
+      (sub ? '<div class="sub"'+(puedeSalir?' data-accion="cerrar-sesion"':'')+'><span class="avatar">'+ic("user",14)+'</span>'+esc(sub)+(puedeSalir?' · salir':'')+'</div>' : '')+
+      '</div>';
   }
 
   // ---------- restaurar copia de seguridad (opcional) ----------
@@ -526,39 +716,48 @@
       var dias = diasHasta(p.proximaConsulta);
       var clase = "recordatorio-neutro", texto = "";
       if(dias < 0){ clase="recordatorio-vencido"; texto = "Tu consulta era el "+formatoFecha(p.proximaConsulta)+". Si ya fuiste, actualiza la fecha de tu próxima cita."; }
-      else if(dias === 0){ clase="recordatorio-hoy"; texto = "📅 ¡Hoy es tu consulta! ("+formatoFecha(p.proximaConsulta)+")"; }
-      else if(dias <= 3){ clase="recordatorio-cercano"; texto = "📅 Tu consulta es en "+dias+" día"+(dias===1?"":"s")+", el "+formatoFecha(p.proximaConsulta)+"."; }
-      else { texto = "📅 Tu próxima consulta es el "+formatoFecha(p.proximaConsulta)+"."; }
-      recordatorio = '<div class="recordatorio '+clase+'"><span>'+texto+'</span><a class="editar-link" data-accion="editar-consulta">editar</a></div>';
+      else if(dias === 0){ clase="recordatorio-hoy"; texto = "¡Hoy es tu consulta! ("+formatoFecha(p.proximaConsulta)+")"; }
+      else if(dias <= 3){ clase="recordatorio-cercano"; texto = "Tu consulta es en "+dias+" día"+(dias===1?"":"s")+", el "+formatoFecha(p.proximaConsulta)+"."; }
+      else { texto = "Tu próxima consulta es el "+formatoFecha(p.proximaConsulta)+"."; }
+      recordatorio = '<div class="recordatorio '+clase+'">'+iconoBadge("calendar",null,20)+'<span style="flex:1;">'+texto+'</span>'+
+        '<a class="enlace-flecha" data-accion="editar-consulta">Editar '+ic("arrowRight",15)+'</a></div>';
     } else {
-      recordatorio = '<div class="recordatorio recordatorio-neutro"><span>Aún no tienes una fecha de consulta guardada.</span><a class="editar-link" data-accion="editar-consulta">agregar</a></div>';
+      recordatorio = '<div class="recordatorio recordatorio-neutro">'+iconoBadge("calendar",null,20)+'<span style="flex:1;">Aún no tienes una fecha de consulta guardada.</span>'+
+        '<a class="enlace-flecha" data-accion="editar-consulta">Agregar '+ic("arrowRight",15)+'</a></div>';
     }
 
     var resumenUltimo = "";
     if(ultimo){
-      resumenUltimo = '<div class="panel"><h3>Último control · '+esc(formatoFecha(ultimo.fecha))+'</h3>'+
-        '<div class="chip-fila"><div class="chip">'+esc(ultimo.sistolica)+'/'+esc(ultimo.diastolica)+'<span class="n">mmHg</span></div>'+
-        '<div class="chip">'+ultimo.flor.info.emoji+'<span class="n">'+esc(ultimo.flor.info.nombre)+'</span></div></div>'+
-        (ultimo.urgenciasActivas && ultimo.urgenciasActivas.length ? '<p style="color:var(--burdeos); font-weight:600;">⚠ Ese día se marcó al menos una señal de atención médica inmediata.</p>' : '')+
+      var claveTono = ultimo.bp.clave==="n3"?"burdeos":(ultimo.bp.clave==="n2"?"ambar":"salvia");
+      resumenUltimo = '<div class="panel">'+
+        '<div class="fila-titulo">'+iconoBadge("heartPulse",null,20)+'<div class="titulo-txt"><h3>Último control</h3><p class="muted" style="margin:0;">'+esc(formatoFecha(ultimo.fecha))+'</p></div></div>'+
+        '<div class="fila-metricas">'+
+        '<div class="caja-metrica"><span class="ic">'+ic("heartPulse",20)+'</span><div><div class="valor">'+esc(ultimo.sistolica)+'/'+esc(ultimo.diastolica)+'</div><div class="etiqueta">mmHg · Presión arterial</div></div></div>'+
+        '<div class="caja-metrica tono-'+claveTono+'"><span class="ic">'+ultimo.flor.info.emoji+'</span><div><div class="valor">'+esc(ultimo.flor.info.nombre)+'</div><div class="etiqueta">'+(ultimo.bp.clave==="n3"?"Riesgo de preeclampsia":(ultimo.bp.clave==="n2"?"Requiere vigilancia":"Todo en orden"))+'</div></div></div>'+
+        '</div>'+
+        (ultimo.urgenciasActivas && ultimo.urgenciasActivas.length ? '<p style="color:var(--burdeos); font-weight:600; margin-top:12px;">⚠ Ese día se marcó al menos una señal de atención médica inmediata.</p>' : '')+
         '</div>';
     }
 
-    var qrSeccion = '<div class="panel"><h3>Código QR para tu médico</h3>'+
+    var qrSeccion = '<div class="panel">'+
+      '<div class="fila-titulo">'+iconoBadge("qr",null,20)+'<div class="titulo-txt"><h3>Código QR para tu médico</h3></div></div>'+
       '<p class="muted">Genera un código con tu perfil y tus últimos controles para que tu médico lo escanee en la consulta.</p>'+
       (estado.mostrandoQR
         ? '<div id="qr-contenedor" class="qr-contenedor"></div><p class="muted" style="text-align:center;">Válido con los datos de este momento — vuelve a generarlo si registras un control nuevo.</p><button class="btn-texto" data-accion="ocultar-qr">Ocultar código</button>'
-        : '<button class="btn-secundaria" data-accion="mostrar-qr">Generar código QR</button>')+
+        : '<button class="btn-secundaria con-icono" data-accion="mostrar-qr"><span class="ic-izq">'+ic("qr",18)+'</span><span class="txt">Generar código QR</span><span class="ic-der">'+ic("arrowRight",16)+'</span></button>')+
       '</div>';
 
     var seccionRespaldo = "";
     var usuarioActual = auth.currentUser;
     var esAnonima = usuarioActual && usuarioActual.isAnonymous;
     if(!esAnonima && usuarioActual){
-      seccionRespaldo = '<div class="panel respaldo-activo"><h3>✅ Copia de seguridad activa</h3>'+
+      seccionRespaldo = '<div class="panel respaldo-activo">'+
+        '<div class="fila-titulo">'+iconoBadge("shield","salvia",20)+'<div class="titulo-txt"><h3>Copia de seguridad activa</h3></div></div>'+
         '<p class="muted">Tus datos están respaldados con <b>'+esc(usuarioActual.email)+'</b>. Puedes iniciar sesión con este correo desde cualquier otro teléfono para recuperarlos.</p>'+
         '</div>';
     } else if(estado.mostrandoRespaldo){
-      seccionRespaldo = '<div class="panel"><h3>Copia de seguridad</h3>'+
+      seccionRespaldo = '<div class="panel">'+
+        '<div class="fila-titulo">'+iconoBadge("shield",null,20)+'<div class="titulo-txt"><h3>Copia de seguridad</h3></div></div>'+
         (estado.respaldoError ? '<div class="error-msg">'+esc(estado.respaldoError)+'</div>' : '')+
         '<p class="muted">Agrega tu correo para no perder tus datos si cambias o formateas el teléfono.</p>'+
         '<form id="form-respaldo">'+
@@ -569,24 +768,26 @@
         '<button class="btn-texto" data-accion="ocultar-respaldo">Cancelar</button>'+
         '</div>';
     } else {
-      seccionRespaldo = '<div class="panel respaldo-pendiente"><h3>⚠️ Copia de seguridad</h3>'+
+      seccionRespaldo = '<div class="panel respaldo-pendiente">'+
+        '<div class="fila-titulo">'+iconoBadge("shield","ambar",20)+'<div class="titulo-txt"><h3>Copia de seguridad</h3></div></div>'+
         '<p class="muted">Tus datos solo están guardados en este teléfono. Si lo pierdes o lo formateas, no se pueden recuperar.</p>'+
-        '<button class="btn-secundaria" data-accion="mostrar-respaldo">Agregar copia de seguridad</button>'+
+        '<button class="btn-secundaria con-icono" data-accion="mostrar-respaldo"><span class="ic-izq">'+ic("shield",18)+'</span><span class="txt">Agregar copia de seguridad</span><span class="ic-der">'+ic("arrowRight",16)+'</span></button>'+
         '</div>';
     }
 
     return encabezado(p.nombre) +
       recordatorio+
       seccionRespaldo+
-      '<div class="panel"><h2>'+esc(p.nombre)+' '+esc(p.apellido)+'</h2>'+
-      '<div class="ficha-dato"><span class="k">Cédula</span><span class="v">'+esc(p.cedula)+'</span></div>'+
-      '<div class="ficha-dato"><span class="k">Edad</span><span class="v">'+(edad!=null?edad+" años":"—")+'</span></div>'+
-      '<div class="ficha-dato"><span class="k">Semanas de embarazo</span><span class="v">'+(semanas!=null?semanas+" semanas":"—")+'</span></div>'+
-      '<div class="ficha-dato"><span class="k">Contacto de emergencia</span><span class="v">'+esc(p.ceNombre)+' '+esc(p.ceApellido)+'</span></div>'+
+      '<div class="panel">'+
+      '<div class="fila-titulo">'+iconoBadge("user",null,20)+'<div class="titulo-txt"><h2>'+esc(p.nombre)+' '+esc(p.apellido)+'</h2></div></div>'+
+      '<div class="fila-dato-ic"><span class="ic">'+ic("idCard",16)+'</span><span class="txt"><span class="k">Cédula</span><span class="v">'+esc(p.cedula)+'</span></span></div>'+
+      '<div class="fila-dato-ic"><span class="ic">'+ic("calendar",16)+'</span><span class="txt"><span class="k">Edad</span><span class="v">'+(edad!=null?edad+" años":"—")+'</span></span></div>'+
+      '<div class="fila-dato-ic"><span class="ic">'+ic("calendar",16)+'</span><span class="txt"><span class="k">Semanas de embarazo</span><span class="v">'+(semanas!=null?semanas+" semanas":"—")+'</span></span></div>'+
+      '<div class="fila-dato-ic"><span class="ic">'+ic("personCheck",16)+'</span><span class="txt"><span class="k">Contacto de emergencia</span><span class="v">'+esc(p.ceNombre)+' '+esc(p.ceApellido)+'</span></span></div>'+
       '</div>'+
       resumenUltimo+
-      '<button class="btn-primaria" data-accion="iniciar-control">Registrar control de hoy</button>'+
-      '<div class="btn-fila"><button class="btn-secundaria" data-accion="ver-historial">Ver historial ('+registros.length+')</button></div>'+
+      '<button class="btn-primaria con-icono" data-accion="iniciar-control"><span class="ic-izq">'+ic("clipboard",18)+'</span><span class="txt">Registrar control de hoy</span><span class="ic-der">'+ic("arrowRight",16)+'</span></button>'+
+      '<div class="btn-fila"><button class="btn-secundaria con-icono" data-accion="ver-historial"><span class="ic-izq">'+ic("clock",18)+'</span><span class="txt">Ver historial ('+registros.length+')</span><span class="ic-der">'+ic("arrowRight",16)+'</span></button></div>'+
       qrSeccion+
       (esAnonima ? '<button class="btn-texto" data-accion="ir-restaurar">¿Usas otro teléfono? Inicia sesión con tu copia de seguridad</button>' : '');
   }
@@ -696,7 +897,7 @@
 
   // ---------- eventos ----------
   function ligarEventos(){
-    app.querySelectorAll("[data-accion]").forEach(function(el){
+    document.querySelectorAll("[data-accion]").forEach(function(el){
       el.addEventListener("click", function(){
         var a = el.getAttribute("data-accion");
         if(a==="olvide-password"){ estado.pantalla="recuperar"; estado.authError=""; estado.authInfo=""; render(); }
@@ -739,6 +940,15 @@
           }
         }
         else if(a==="cerrar-banner-instalar"){ estado.mostrarInstalar=false; render(); }
+        else if(a==="abrir-sidebar"){ estado.sidebarAbierta=true; render(); }
+        else if(a==="cerrar-sidebar"){ estado.sidebarAbierta=false; render(); }
+        else if(a==="nav-inicio"){ estado.sidebarAbierta=false; estado.pantalla="panel"; render(); }
+        else if(a==="nav-historial"){ estado.sidebarAbierta=false; estado.pantalla="historial"; render(); }
+        else if(a==="nav-respaldo"){
+          estado.sidebarAbierta=false; estado.pantalla="panel";
+          if(auth.currentUser && auth.currentUser.isAnonymous) estado.mostrandoRespaldo=true;
+          render();
+        }
         else if(a==="ver-detalle"){ estado.registroVisto=Number(el.getAttribute("data-idx")); estado.pantalla="detalle"; render(); }
         else if(a==="volver-historial"){ estado.pantalla="historial"; render(); }
         else if(a==="control-anterior"){
