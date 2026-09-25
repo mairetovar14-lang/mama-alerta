@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -123,6 +124,10 @@
   .recordatorio-cercano{background:var(--ambar-fondo); color:var(--ambar);}
   .recordatorio-hoy{background:var(--rosa-suave); color:var(--rosa-profunda);}
   .recordatorio-vencido{background:var(--linea); color:var(--ciruela-suave);}
+  .respaldo-pendiente{border:1.5px dashed var(--ambar); background:var(--ambar-fondo);}
+  .respaldo-pendiente h3{color:var(--ambar);}
+  .respaldo-activo{border:1.5px solid var(--salvia); background:var(--salvia-fondo);}
+  .respaldo-activo h3{color:var(--salvia);}
   .recordatorio .editar-link{font-weight:600; text-decoration:underline; white-space:nowrap; cursor:pointer; color:inherit;}
 
   .alerta-tendencia{
@@ -197,8 +202,8 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import {
-    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-    onAuthStateChanged, signOut, sendPasswordResetEmail
+    getAuth, signInAnonymously, linkWithCredential, EmailAuthProvider,
+    signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import {
     getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
@@ -278,35 +283,39 @@
   }
 
   // ---------- estado ----------
-  var estado = { pantalla:"cargando", authTab:"login", authError:"", authInfo:"", perfil:null, registros:[], registroCargado:false,
-    controlPaso:1, controlDatos:{sistolica:"",diastolica:"",sintomas:{},urgencia:{}}, registroVisto:null, guardando:false,
-    editandoConsulta:false, mostrandoQR:false, mostrarInstalar:false };
+  var estado = { pantalla:"cargando", authError:"", authInfo:"", respaldoError:"", perfil:null, registros:[],
+    controlPaso:1, controlDatos:{sistolica:"",diastolica:"",sintomas:{},urgencia:{}}, registroVisto:null,
+    editandoConsulta:false, mostrandoQR:false, mostrarInstalar:false, mostrandoRespaldo:false };
   var deferredInstallPrompt = null;
   var uidActual = null;
   var unsubRegistros = null;
 
   var app = document.getElementById("app");
+  var PANTALLAS_ESTILO_TARJETA = ["restaurar","recuperar","sinRedInicial"];
 
   function render(){
     var html = "";
     if(estado.pantalla==="cargando") html = '<div class="cargando">Cargando…</div>';
-    else if(estado.pantalla==="auth") html = vistaAuth();
+    else if(estado.pantalla==="restaurar") html = vistaRestaurar();
+    else if(estado.pantalla==="recuperar") html = vistaRecuperar();
+    else if(estado.pantalla==="sinRedInicial") html = vistaSinRedInicial();
     else if(estado.pantalla==="completarPerfil") html = vistaCompletarPerfil();
     else if(estado.pantalla==="panel") html = vistaPanel();
     else if(estado.pantalla==="control") html = vistaControl();
     else if(estado.pantalla==="resultado") html = vistaResultado();
     else if(estado.pantalla==="historial") html = vistaHistorial();
     else if(estado.pantalla==="detalle") html = vistaDetalle();
+    var esPantallaTarjeta = PANTALLAS_ESTILO_TARJETA.indexOf(estado.pantalla) !== -1;
     var banner = (estado.pantalla!=="cargando" && !navigator.onLine)
       ? '<div class="banner-offline">📶 Sin conexión — lo que registres se guardará y se sincronizará solo al volver internet</div>'
       : '';
-    var bannerInstalar = (estado.mostrarInstalar && estado.pantalla!=="cargando" && estado.pantalla!=="auth")
+    var bannerInstalar = (estado.mostrarInstalar && estado.pantalla!=="cargando" && !esPantallaTarjeta)
       ? '<div class="banner-instalar"><span>📲 Instala esta app en tu teléfono para abrirla más rápido</span>'+
         '<span style="display:flex; gap:6px;"><button data-accion="instalar-app">Instalar</button>'+
         '<button class="cerrar" data-accion="cerrar-banner-instalar">✕</button></span></div>'
       : '';
     app.innerHTML = banner + bannerInstalar + html;
-    document.body.classList.toggle("pantalla-auth", estado.pantalla === "auth");
+    document.body.classList.toggle("pantalla-auth", esPantallaTarjeta);
     ligarEventos();
     window.scrollTo(0,0);
   }
@@ -340,35 +349,31 @@
   }
 
   function encabezado(sub){
+    var puedeSalir = auth.currentUser && !auth.currentUser.isAnonymous;
     return '<header class="top"><div class="brand"><span class="mark">🌷</span><h1>Mamá Alerta</h1></div>'+
-      (sub ? '<div class="sub" data-accion="cerrar-sesion">'+esc(sub)+' · salir</div>' : '')+'</header>';
+      (sub ? '<div class="sub"'+(puedeSalir?' data-accion="cerrar-sesion"':'')+'>'+esc(sub)+(puedeSalir?' · salir':'')+'</div>' : '')+
+      '</header>';
   }
 
-  // ---------- auth ----------
-  function vistaAuth(){
-    if(estado.authTab === "recuperar") return vistaRecuperar();
-    var esLogin = estado.authTab === "login";
+  // ---------- restaurar copia de seguridad (opcional) ----------
+  function vistaRestaurar(){
     return '<div class="auth-wrap">'+
       '<div class="auth-hero">'+
       '<div class="icono">🌷</div>'+
-      '<h1>Mamá Alerta</h1>'+
-      '<p>Tu control prenatal, día a día.</p>'+
+      '<h1>Iniciar sesión</h1>'+
+      '<p>Recupera tus datos usando el correo de tu copia de seguridad.</p>'+
       '</div>'+
       '<div class="auth-card">'+
-      '<div class="segmented">'+
-      '<button class="'+(esLogin?"activo":"")+'" data-accion="tab-login">Iniciar sesión</button>'+
-      '<button class="'+(!esLogin?"activo":"")+'" data-accion="tab-registro">Crear cuenta</button>'+
-      '</div>'+
       (estado.authError ? '<div class="error-msg">'+esc(estado.authError)+'</div>' : '')+
       (estado.authInfo ? '<div class="info-msg">'+esc(estado.authInfo)+'</div>' : '')+
-      '<form id="form-auth">'+
-      '<div class="campo"><label>Correo electrónico</label><input type="email" id="auth-email" required autocomplete="email"></div>'+
-      '<div class="campo"><label>Contraseña</label><input type="password" id="auth-pass" required minlength="6" autocomplete="'+(esLogin?"current-password":"new-password")+'"></div>'+
-      (esLogin ? '<a class="olvide" data-accion="olvide-password">¿Olvidaste tu contraseña?</a>' : '')+
-      '<button type="submit" class="btn-primaria" id="auth-submit">'+(esLogin?"Iniciar sesión":"Crear cuenta")+'</button>'+
+      '<form id="form-restaurar">'+
+      '<div class="campo"><label>Correo electrónico</label><input type="email" id="restaurar-email" required autocomplete="email"></div>'+
+      '<div class="campo"><label>Contraseña</label><input type="password" id="restaurar-pass" required autocomplete="current-password"></div>'+
+      '<a class="olvide" data-accion="olvide-password">¿Olvidaste tu contraseña?</a>'+
+      '<button type="submit" class="btn-primaria" id="restaurar-submit">Iniciar sesión</button>'+
       '</form>'+
       '</div>'+
-      '<p class="auth-foot">Acceso privado e individual para cada usuaria.</p>'+
+      '<p class="auth-foot">¿No tienes copia de seguridad todavía? <a data-accion="volver-panel-perfil" style="color:inherit; text-decoration:underline; cursor:pointer;">Vuelve atrás</a> y sigue usando la app en este teléfono.</p>'+
       '</div>';
   }
 
@@ -386,7 +391,21 @@
       '<div class="campo"><label>Correo electrónico</label><input type="email" id="recuperar-email" required autocomplete="email"></div>'+
       '<button type="submit" class="btn-primaria" id="recuperar-submit">Enviar enlace de recuperación</button>'+
       '</form>'+
-      '<a class="recuperar-volver" data-accion="volver-login">← Volver a iniciar sesión</a>'+
+      '<a class="recuperar-volver" data-accion="volver-restaurar">← Volver a iniciar sesión</a>'+
+      '</div>'+
+      '</div>';
+  }
+
+  function vistaSinRedInicial(){
+    return '<div class="auth-wrap">'+
+      '<div class="auth-hero">'+
+      '<div class="icono">🌷</div>'+
+      '<h1>No se pudo iniciar</h1>'+
+      '<p>Necesitas internet la primera vez que abres esta app en un teléfono nuevo. Una vez conectada, ya puedes usarla sin conexión.</p>'+
+      '</div>'+
+      '<div class="auth-card">'+
+      (estado.authError ? '<div class="error-msg">'+esc(estado.authError)+'</div>' : '')+
+      '<button class="btn-primaria" data-accion="reintentar-inicio">Reintentar</button>'+
       '</div>'+
       '</div>';
   }
@@ -476,7 +495,8 @@
       '<h3 style="margin-top:18px;">Próxima consulta</h3>'+
       '<div class="campo"><label>Fecha de tu próxima consulta (opcional)</label><input type="date" name="proximaConsulta"></div>'+
       '<button type="submit" class="btn-primaria">Guardar y continuar</button>'+
-      '</form>';
+      '</form>'+
+      '<p class="muted" style="text-align:center; margin-top:14px;">¿Ya usaste esta app antes en otro teléfono? <a data-accion="ir-restaurar" style="color:var(--rosa-profunda); text-decoration:underline; cursor:pointer;">Inicia sesión con tu copia de seguridad</a></p>';
   }
 
   function diasHasta(fechaISO){
@@ -530,8 +550,34 @@
         : '<button class="btn-secundaria" data-accion="mostrar-qr">Generar código QR</button>')+
       '</div>';
 
+    var seccionRespaldo = "";
+    var usuarioActual = auth.currentUser;
+    var esAnonima = usuarioActual && usuarioActual.isAnonymous;
+    if(!esAnonima && usuarioActual){
+      seccionRespaldo = '<div class="panel respaldo-activo"><h3>✅ Copia de seguridad activa</h3>'+
+        '<p class="muted">Tus datos están respaldados con <b>'+esc(usuarioActual.email)+'</b>. Puedes iniciar sesión con este correo desde cualquier otro teléfono para recuperarlos.</p>'+
+        '</div>';
+    } else if(estado.mostrandoRespaldo){
+      seccionRespaldo = '<div class="panel"><h3>Copia de seguridad</h3>'+
+        (estado.respaldoError ? '<div class="error-msg">'+esc(estado.respaldoError)+'</div>' : '')+
+        '<p class="muted">Agrega tu correo para no perder tus datos si cambias o formateas el teléfono.</p>'+
+        '<form id="form-respaldo">'+
+        '<div class="campo"><label>Correo electrónico</label><input type="email" id="respaldo-email" required></div>'+
+        '<div class="campo"><label>Contraseña (mínimo 6 caracteres)</label><input type="password" id="respaldo-pass" required minlength="6"></div>'+
+        '<button type="submit" class="btn-primaria">Guardar copia de seguridad</button>'+
+        '</form>'+
+        '<button class="btn-texto" data-accion="ocultar-respaldo">Cancelar</button>'+
+        '</div>';
+    } else {
+      seccionRespaldo = '<div class="panel respaldo-pendiente"><h3>⚠️ Copia de seguridad</h3>'+
+        '<p class="muted">Tus datos solo están guardados en este teléfono. Si lo pierdes o lo formateas, no se pueden recuperar.</p>'+
+        '<button class="btn-secundaria" data-accion="mostrar-respaldo">Agregar copia de seguridad</button>'+
+        '</div>';
+    }
+
     return encabezado(p.nombre) +
       recordatorio+
+      seccionRespaldo+
       '<div class="panel"><h2>'+esc(p.nombre)+' '+esc(p.apellido)+'</h2>'+
       '<div class="ficha-dato"><span class="k">Cédula</span><span class="v">'+esc(p.cedula)+'</span></div>'+
       '<div class="ficha-dato"><span class="k">Edad</span><span class="v">'+(edad!=null?edad+" años":"—")+'</span></div>'+
@@ -541,7 +587,8 @@
       resumenUltimo+
       '<button class="btn-primaria" data-accion="iniciar-control">Registrar control de hoy</button>'+
       '<div class="btn-fila"><button class="btn-secundaria" data-accion="ver-historial">Ver historial ('+registros.length+')</button></div>'+
-      qrSeccion;
+      qrSeccion+
+      (esAnonima ? '<button class="btn-texto" data-accion="ir-restaurar">¿Usas otro teléfono? Inicia sesión con tu copia de seguridad</button>' : '');
   }
 
   // ---------- control diario ----------
@@ -652,11 +699,25 @@
     app.querySelectorAll("[data-accion]").forEach(function(el){
       el.addEventListener("click", function(){
         var a = el.getAttribute("data-accion");
-        if(a==="tab-login"){ estado.authTab="login"; estado.authError=""; estado.authInfo=""; render(); }
-        else if(a==="tab-registro"){ estado.authTab="registro"; estado.authError=""; estado.authInfo=""; render(); }
-        else if(a==="olvide-password"){ estado.authTab="recuperar"; estado.authError=""; estado.authInfo=""; render(); }
-        else if(a==="volver-login"){ estado.authTab="login"; estado.authError=""; estado.authInfo=""; render(); }
-        else if(a==="cerrar-sesion"){ signOut(auth); }
+        if(a==="olvide-password"){ estado.pantalla="recuperar"; estado.authError=""; estado.authInfo=""; render(); }
+        else if(a==="volver-restaurar"){ estado.pantalla="restaurar"; estado.authError=""; estado.authInfo=""; render(); }
+        else if(a==="ir-restaurar"){
+          if(confirm("Si en este teléfono ya registraste datos sin copia de seguridad, se quedarán aquí (no se moverán a la otra cuenta). ¿Quieres continuar e iniciar sesión con tu copia de seguridad?")){
+            estado.authError=""; estado.authInfo=""; estado.pantalla="restaurar"; render();
+          }
+        }
+        else if(a==="volver-panel-perfil"){
+          estado.pantalla = (estado.perfil ? "panel" : "completarPerfil");
+          render();
+        }
+        else if(a==="reintentar-inicio"){ location.reload(); }
+        else if(a==="mostrar-respaldo"){ estado.mostrandoRespaldo=true; estado.respaldoError=""; render(); }
+        else if(a==="ocultar-respaldo"){ estado.mostrandoRespaldo=false; render(); }
+        else if(a==="cerrar-sesion"){
+          if(confirm("¿Cerrar sesión? Tus datos seguirán guardados en la nube con tu correo — podrás volver a entrar cuando quieras.")){
+            signOut(auth);
+          }
+        }
         else if(a==="volver-panel"){ estado.pantalla="panel"; render(); }
         else if(a==="iniciar-control"){
           estado.controlPaso=1; estado.controlDatos={sistolica:"",diastolica:"",sintomas:{},urgencia:{}};
@@ -722,19 +783,35 @@
       });
     });
 
-    var formAuth = document.getElementById("form-auth");
-    if(formAuth){
-      formAuth.addEventListener("submit", function(ev){
+    var formRestaurar = document.getElementById("form-restaurar");
+    if(formRestaurar){
+      formRestaurar.addEventListener("submit", function(ev){
         ev.preventDefault();
-        var email = document.getElementById("auth-email").value.trim();
-        var pass = document.getElementById("auth-pass").value;
-        var btn = document.getElementById("auth-submit");
+        var email = document.getElementById("restaurar-email").value.trim();
+        var pass = document.getElementById("restaurar-pass").value;
+        var btn = document.getElementById("restaurar-submit");
         btn.disabled = true; estado.authError=""; estado.authInfo="";
-        var accion = estado.authTab==="login"
-          ? signInWithEmailAndPassword(auth,email,pass)
-          : createUserWithEmailAndPassword(auth,email,pass);
-        accion.catch(function(err){
+        signInWithEmailAndPassword(auth, email, pass).catch(function(err){
           estado.authError = mensajeErrorAuth(err.code);
+          btn.disabled = false;
+          render();
+        });
+      });
+    }
+
+    var formRespaldo = document.getElementById("form-respaldo");
+    if(formRespaldo){
+      formRespaldo.addEventListener("submit", function(ev){
+        ev.preventDefault();
+        var email = document.getElementById("respaldo-email").value.trim();
+        var pass = document.getElementById("respaldo-pass").value;
+        estado.respaldoError = "";
+        var credencial = EmailAuthProvider.credential(email, pass);
+        linkWithCredential(auth.currentUser, credencial).then(function(){
+          estado.mostrandoRespaldo = false;
+          render();
+        }).catch(function(err){
+          estado.respaldoError = mensajeErrorAuth(err.code);
           render();
         });
       });
@@ -879,13 +956,15 @@
       "auth/user-not-found":"No existe una cuenta con ese correo.",
       "auth/wrong-password":"Contraseña incorrecta.",
       "auth/invalid-credential":"Correo o contraseña incorrectos.",
-      "auth/email-already-in-use":"Ya existe una cuenta con ese correo. Inicia sesión.",
+      "auth/email-already-in-use":"Ese correo ya tiene una copia de seguridad de otra usuaria. Usa otro correo, o si es tuyo, ve a \"¿Usas otro teléfono?\" e inicia sesión con él.",
+      "auth/credential-already-in-use":"Ese correo ya tiene una copia de seguridad de otra usuaria. Usa otro correo, o si es tuyo, ve a \"¿Usas otro teléfono?\" e inicia sesión con él.",
       "auth/weak-password":"La contraseña debe tener al menos 6 caracteres.",
       "auth/network-request-failed":"No hay conexión a internet. Verifica tu red e intenta de nuevo.",
       "auth/operation-not-allowed":"El inicio de sesión con correo y contraseña no está habilitado en Firebase (revisa Authentication → Sign-in method).",
       "auth/unauthorized-domain":"Este sitio no está autorizado en Firebase (revisa Authentication → Settings → Authorized domains).",
       "auth/invalid-api-key":"La configuración de Firebase (apiKey) es inválida. Revisa que se haya copiado bien en index.html.",
-      "auth/configuration-not-found":"Falta configuración en el proyecto de Firebase (revisa que Authentication esté habilitado)."
+      "auth/configuration-not-found":"Falta configuración en el proyecto de Firebase (revisa que Authentication esté habilitado).",
+      "auth/admin-restricted-operation":"El inicio de sesión anónimo no está habilitado en Firebase (Authentication → Sign-in method → Anónimo)."
     };
     return m[code] || ("Ocurrió un error ("+code+"). Intenta de nuevo.");
   }
@@ -931,8 +1010,15 @@
     if(unsubRegistros){ unsubRegistros(); unsubRegistros=null; }
     if(!user){
       uidActual = null; estado.perfil = null; estado.registros = [];
-      estado.pantalla = "auth";
-      render();
+      // No hay sesión: iniciamos una anónima automáticamente, sin pedirle
+      // nada a la usuaria. onAuthStateChanged volverá a dispararse solo
+      // cuando esa sesión anónima quede creada.
+      signInAnonymously(auth).catch(function(err){
+        console.error("No se pudo iniciar sesión anónima:", err);
+        estado.authError = mensajeErrorAuth(err.code);
+        estado.pantalla = "sinRedInicial";
+        render();
+      });
       return;
     }
     uidActual = user.uid;
