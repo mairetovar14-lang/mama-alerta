@@ -5,7 +5,7 @@
 // automática, gracias a la persistencia offline habilitada en la app —
 // este archivo solo se encarga de que la "cáscara" de la app cargue.
 
-const CACHE_NAME = "mama-alerta-v2";
+const CACHE_NAME = "mama-alerta-v3";
 
 // Recursos que sabemos de antemano que hacen falta para que la app
 // arranque (el SDK de Firebase, el manifest y los íconos de la app
@@ -21,7 +21,24 @@ const PRECARGA = [
   "./icon-192.png",
   "./icon-512.png",
   "./icon-512-maskable.png",
-  "./apple-touch-icon.png"
+  "./apple-touch-icon.png",
+  "./hojas-flores.png",
+  "./mama-embarazada.png",
+  "./ic-persona.png",
+  "./ic-calendario.png",
+  "./ic-calendario2.png",
+  "./ic-latido.png",
+  "./ic-campana.png",
+  "./ic-engranaje.png",
+  "./ic-qr.png",
+  "./ic-candado.png",
+  "./ic-escanear.png",
+  "./ic-documento.png",
+  "./ic-sobre.png",
+  "./ic-ubicacion.png",
+  "./ic-flecha-der.png",
+  "./ic-flecha-izq.png",
+  "./ic-reloj.png"
 ];
 
 self.addEventListener("install", (event) => {
