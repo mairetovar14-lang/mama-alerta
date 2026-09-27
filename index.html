@@ -19,7 +19,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   :root{
-    --rosa-suave:#e9b8c0; --rosa-media:#d68a97; --rosa-profunda:#8f3f52;
+    --rosa-suave:#e9b8c0; --rosa-media:#d68a97; --rosa-profunda:#963c5b; --rosa-profunda-fin:#7e304c;
     --crema:#fbf3ee; --crema-panel:#ffffff; --ciruela:#382230; --ciruela-suave:#6b5560;
     --linea:#e9d9d4; --salvia:#5f8a6a; --salvia-fondo:#e7f0e5; --ambar:#b9791f; --ambar-fondo:#faedd8;
     --burdeos:#a3323a; --burdeos-fondo:#f8dede; --sombra:0 1px 0 rgba(56,34,48,0.06); --radio:14px;
@@ -48,7 +48,7 @@
   input:focus{outline:2px solid var(--rosa-media); outline-offset:1px;}
   .fila2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
   button{font-family:inherit; font-size:0.98rem; font-weight:600; cursor:pointer; border-radius:10px; border:none; padding:13px 18px;}
-  .btn-primaria{background:var(--rosa-profunda); color:#fff; width:100%;}
+  .btn-primaria{background:linear-gradient(135deg, var(--rosa-profunda), var(--rosa-profunda-fin)); color:#fff; width:100%;}
   .btn-primaria:disabled{opacity:0.6;}
   .btn-secundaria{background:transparent; color:var(--rosa-profunda); border:1.5px solid var(--rosa-profunda); width:100%;}
   .btn-texto{background:none; color:var(--ciruela-suave); padding:8px 4px; text-decoration:underline; font-weight:500;}
@@ -69,11 +69,16 @@
       radial-gradient(520px 420px at 108% 12%, #f0c9d2 0%, rgba(240,201,210,0) 55%),
       var(--crema);
   }
-  .auth-wrap{max-width:400px; margin:0 auto; padding:56px 20px 40px; min-height:100vh;}
+  .auth-wrap{max-width:400px; margin:0 auto; padding:56px 20px 40px; min-height:100vh; position:relative; overflow:hidden;}
+  .auth-wrap::before{
+    content:""; position:absolute; left:-30px; bottom:-10px; width:150px; height:180px;
+    background:url("./hojas-flores.png") no-repeat left bottom/contain; opacity:0.35; pointer-events:none; z-index:0;
+  }
+  .auth-wrap > *{position:relative; z-index:1;}
   .auth-hero{text-align:center; margin-bottom:30px;}
   .auth-hero .icono{
     width:64px; height:64px; margin:0 auto 18px; border-radius:20px;
-    background:linear-gradient(150deg, var(--rosa-suave), var(--rosa-profunda));
+    background:linear-gradient(135deg, var(--rosa-suave), var(--rosa-profunda));
     display:flex; align-items:center; justify-content:center; font-size:30px;
     box-shadow:0 10px 24px -8px rgba(143,63,82,0.45);
   }
@@ -95,7 +100,7 @@
   .auth-card label{font-size:0.8rem; letter-spacing:.01em;}
   .auth-card input{padding:12px 14px; border-radius:11px; font-size:0.98rem;}
   .auth-card .btn-primaria{
-    background:linear-gradient(135deg, var(--rosa-profunda), #7a3346);
+    background:linear-gradient(135deg, var(--rosa-profunda), var(--rosa-profunda-fin));
     border-radius:11px; padding:14px; margin-top:4px;
     box-shadow:0 12px 22px -10px rgba(143,63,82,0.55);
   }
@@ -192,7 +197,7 @@
   #shell{display:flex; min-height:100vh;}
   #sidebar{
     width:260px; flex:0 0 260px; min-height:100vh;
-    background:linear-gradient(160deg, var(--rosa-profunda) 0%, #5c2438 100%);
+    background:linear-gradient(135deg, var(--rosa-profunda) 0%, var(--rosa-profunda-fin) 100%);
     color:#fff; padding:26px 20px; position:fixed; top:0; left:0; bottom:0;
     display:flex; flex-direction:column; z-index:40;
     transform:translateX(0); transition:transform .25s ease;
@@ -296,6 +301,25 @@
   .caja-metrica.tono-burdeos .valor, .caja-metrica.tono-burdeos .ic{color:var(--burdeos);}
   .caja-metrica.tono-salvia .valor, .caja-metrica.tono-salvia .ic{color:var(--salvia);}
   .fila-metricas{display:flex; gap:12px; margin-top:6px;}
+
+  /* ---- campos con icono (correo / contraseña) ---- */
+  .campo-icono{position:relative;}
+  .campo-icono img{position:absolute; left:13px; top:50%; transform:translateY(-50%); width:18px; height:18px; opacity:0.75; pointer-events:none;}
+  .campo-icono input{padding-left:42px;}
+  .campo-icono .ojo{
+    position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none;
+    cursor:pointer; color:var(--ciruela-suave); padding:4px; display:flex;
+  }
+
+  /* ---- tarjeta con la ilustración en pantallas de acceso ---- */
+  .auth-ilustracion{
+    display:flex; justify-content:center; margin-bottom:18px;
+  }
+  .auth-ilustracion img{
+    width:150px; border-radius:20px; box-shadow:0 14px 30px -14px rgba(56,34,48,0.35);
+  }
+  .hoja-esquina{position:absolute; width:70px; opacity:0.5; pointer-events:none;}
+
 </style>
 
 </head>
@@ -384,7 +408,9 @@
     logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
     menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
     close: '<path d="M6 6l12 12M18 6L6 18"/>',
-    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>'
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
+    eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+    eyeOff: '<path d="M3 3l18 18"/><path d="M10.6 5.2A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17.7 17.7 0 0 1-3.2 4.1M6.6 6.6C4 8.3 2 12 2 12s3.5 7 10 7c1.4 0 2.6-.3 3.7-.7"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'
   };
   function ic(nombre, tam){
     tam = tam || 20;
@@ -392,6 +418,17 @@
   }
   function iconoBadge(nombre, tono, tam){
     return '<div class="icono-badge'+(tono?" "+tono:"")+'">'+ic(nombre, tam||20)+'</div>';
+  }
+  // Variante con los iconos PNG reales (solo para fondos claros/neutros —
+  // llevan el color marrón ya "quemado" en el PNG, así que no sirven sobre
+  // fondos oscuros como la barra lateral).
+  function iconoBadgeImg(archivo, tam){
+    tam = tam || 20;
+    return '<div class="icono-badge"><img src="./'+archivo+'" style="width:'+tam+'px; height:'+tam+'px; display:block;" alt=""></div>';
+  }
+  function imgIcono(archivo, tam){
+    tam = tam || 16;
+    return '<img src="./'+archivo+'" style="width:'+tam+'px; height:'+tam+'px; display:block;" alt="">';
   }
 
   // Ilustración decorativa simple (silueta + hojas) para el pie de la barra lateral
@@ -548,8 +585,8 @@
   // ---------- restaurar copia de seguridad (opcional) ----------
   function vistaRestaurar(){
     return '<div class="auth-wrap">'+
+      '<div class="auth-ilustracion"><img src="./mama-embarazada.png" alt=""></div>'+
       '<div class="auth-hero">'+
-      '<div class="icono">🌷</div>'+
       '<h1>Iniciar sesión</h1>'+
       '<p>Recupera tus datos usando el correo de tu copia de seguridad.</p>'+
       '</div>'+
@@ -557,8 +594,10 @@
       (estado.authError ? '<div class="error-msg">'+esc(estado.authError)+'</div>' : '')+
       (estado.authInfo ? '<div class="info-msg">'+esc(estado.authInfo)+'</div>' : '')+
       '<form id="form-restaurar">'+
-      '<div class="campo"><label>Correo electrónico</label><input type="email" id="restaurar-email" required autocomplete="email"></div>'+
-      '<div class="campo"><label>Contraseña</label><input type="password" id="restaurar-pass" required autocomplete="current-password"></div>'+
+      '<div class="campo campo-icono"><label>Correo electrónico</label>'+imgIcono("ic-sobre.png",18)+'<input type="email" id="restaurar-email" required autocomplete="email"></div>'+
+      '<div class="campo campo-icono"><label>Contraseña</label>'+imgIcono("ic-candado.png",18)+
+      '<input type="password" id="restaurar-pass" required autocomplete="current-password">'+
+      '<button type="button" class="ojo" data-accion="ver-pass-restaurar">'+ic("eye",18)+'</button></div>'+
       '<a class="olvide" data-accion="olvide-password">¿Olvidaste tu contraseña?</a>'+
       '<button type="submit" class="btn-primaria" id="restaurar-submit">Iniciar sesión</button>'+
       '</form>'+
@@ -719,10 +758,10 @@
       else if(dias === 0){ clase="recordatorio-hoy"; texto = "¡Hoy es tu consulta! ("+formatoFecha(p.proximaConsulta)+")"; }
       else if(dias <= 3){ clase="recordatorio-cercano"; texto = "Tu consulta es en "+dias+" día"+(dias===1?"":"s")+", el "+formatoFecha(p.proximaConsulta)+"."; }
       else { texto = "Tu próxima consulta es el "+formatoFecha(p.proximaConsulta)+"."; }
-      recordatorio = '<div class="recordatorio '+clase+'">'+iconoBadge("calendar",null,20)+'<span style="flex:1;">'+texto+'</span>'+
+      recordatorio = '<div class="recordatorio '+clase+'">'+iconoBadgeImg("ic-calendario.png",20)+'<span style="flex:1;">'+texto+'</span>'+
         '<a class="enlace-flecha" data-accion="editar-consulta">Editar '+ic("arrowRight",15)+'</a></div>';
     } else {
-      recordatorio = '<div class="recordatorio recordatorio-neutro">'+iconoBadge("calendar",null,20)+'<span style="flex:1;">Aún no tienes una fecha de consulta guardada.</span>'+
+      recordatorio = '<div class="recordatorio recordatorio-neutro">'+iconoBadgeImg("ic-calendario.png",20)+'<span style="flex:1;">Aún no tienes una fecha de consulta guardada.</span>'+
         '<a class="enlace-flecha" data-accion="editar-consulta">Agregar '+ic("arrowRight",15)+'</a></div>';
     }
 
@@ -730,9 +769,9 @@
     if(ultimo){
       var claveTono = ultimo.bp.clave==="n3"?"burdeos":(ultimo.bp.clave==="n2"?"ambar":"salvia");
       resumenUltimo = '<div class="panel">'+
-        '<div class="fila-titulo">'+iconoBadge("heartPulse",null,20)+'<div class="titulo-txt"><h3>Último control</h3><p class="muted" style="margin:0;">'+esc(formatoFecha(ultimo.fecha))+'</p></div></div>'+
+        '<div class="fila-titulo">'+iconoBadgeImg("ic-latido.png",20)+'<div class="titulo-txt"><h3>Último control</h3><p class="muted" style="margin:0;">'+esc(formatoFecha(ultimo.fecha))+'</p></div></div>'+
         '<div class="fila-metricas">'+
-        '<div class="caja-metrica"><span class="ic">'+ic("heartPulse",20)+'</span><div><div class="valor">'+esc(ultimo.sistolica)+'/'+esc(ultimo.diastolica)+'</div><div class="etiqueta">mmHg · Presión arterial</div></div></div>'+
+        '<div class="caja-metrica"><span class="ic">'+imgIcono("ic-latido.png",20)+'</span><div><div class="valor">'+esc(ultimo.sistolica)+'/'+esc(ultimo.diastolica)+'</div><div class="etiqueta">mmHg · Presión arterial</div></div></div>'+
         '<div class="caja-metrica tono-'+claveTono+'"><span class="ic">'+ultimo.flor.info.emoji+'</span><div><div class="valor">'+esc(ultimo.flor.info.nombre)+'</div><div class="etiqueta">'+(ultimo.bp.clave==="n3"?"Riesgo de preeclampsia":(ultimo.bp.clave==="n2"?"Requiere vigilancia":"Todo en orden"))+'</div></div></div>'+
         '</div>'+
         (ultimo.urgenciasActivas && ultimo.urgenciasActivas.length ? '<p style="color:var(--burdeos); font-weight:600; margin-top:12px;">⚠ Ese día se marcó al menos una señal de atención médica inmediata.</p>' : '')+
@@ -740,11 +779,11 @@
     }
 
     var qrSeccion = '<div class="panel">'+
-      '<div class="fila-titulo">'+iconoBadge("qr",null,20)+'<div class="titulo-txt"><h3>Código QR para tu médico</h3></div></div>'+
+      '<div class="fila-titulo">'+iconoBadgeImg("ic-qr.png",20)+'<div class="titulo-txt"><h3>Código QR para tu médico</h3></div></div>'+
       '<p class="muted">Genera un código con tu perfil y tus últimos controles para que tu médico lo escanee en la consulta.</p>'+
       (estado.mostrandoQR
         ? '<div id="qr-contenedor" class="qr-contenedor"></div><p class="muted" style="text-align:center;">Válido con los datos de este momento — vuelve a generarlo si registras un control nuevo.</p><button class="btn-texto" data-accion="ocultar-qr">Ocultar código</button>'
-        : '<button class="btn-secundaria con-icono" data-accion="mostrar-qr"><span class="ic-izq">'+ic("qr",18)+'</span><span class="txt">Generar código QR</span><span class="ic-der">'+ic("arrowRight",16)+'</span></button>')+
+        : '<button class="btn-secundaria con-icono" data-accion="mostrar-qr"><span class="ic-izq">'+imgIcono("ic-qr.png",18)+'</span><span class="txt">Generar código QR</span><span class="ic-der">'+ic("arrowRight",16)+'</span></button>')+
       '</div>';
 
     var seccionRespaldo = "";
@@ -761,8 +800,10 @@
         (estado.respaldoError ? '<div class="error-msg">'+esc(estado.respaldoError)+'</div>' : '')+
         '<p class="muted">Agrega tu correo para no perder tus datos si cambias o formateas el teléfono.</p>'+
         '<form id="form-respaldo">'+
-        '<div class="campo"><label>Correo electrónico</label><input type="email" id="respaldo-email" required></div>'+
-        '<div class="campo"><label>Contraseña (mínimo 6 caracteres)</label><input type="password" id="respaldo-pass" required minlength="6"></div>'+
+        '<div class="campo campo-icono"><label>Correo electrónico</label>'+imgIcono("ic-sobre.png",18)+'<input type="email" id="respaldo-email" required></div>'+
+        '<div class="campo campo-icono"><label>Contraseña (mínimo 6 caracteres)</label>'+imgIcono("ic-candado.png",18)+
+        '<input type="password" id="respaldo-pass" required minlength="6">'+
+        '<button type="button" class="ojo" data-accion="ver-pass-respaldo">'+ic("eye",18)+'</button></div>'+
         '<button type="submit" class="btn-primaria">Guardar copia de seguridad</button>'+
         '</form>'+
         '<button class="btn-texto" data-accion="ocultar-respaldo">Cancelar</button>'+
@@ -779,11 +820,11 @@
       recordatorio+
       seccionRespaldo+
       '<div class="panel">'+
-      '<div class="fila-titulo">'+iconoBadge("user",null,20)+'<div class="titulo-txt"><h2>'+esc(p.nombre)+' '+esc(p.apellido)+'</h2></div></div>'+
-      '<div class="fila-dato-ic"><span class="ic">'+ic("idCard",16)+'</span><span class="txt"><span class="k">Cédula</span><span class="v">'+esc(p.cedula)+'</span></span></div>'+
-      '<div class="fila-dato-ic"><span class="ic">'+ic("calendar",16)+'</span><span class="txt"><span class="k">Edad</span><span class="v">'+(edad!=null?edad+" años":"—")+'</span></span></div>'+
-      '<div class="fila-dato-ic"><span class="ic">'+ic("calendar",16)+'</span><span class="txt"><span class="k">Semanas de embarazo</span><span class="v">'+(semanas!=null?semanas+" semanas":"—")+'</span></span></div>'+
-      '<div class="fila-dato-ic"><span class="ic">'+ic("personCheck",16)+'</span><span class="txt"><span class="k">Contacto de emergencia</span><span class="v">'+esc(p.ceNombre)+' '+esc(p.ceApellido)+'</span></span></div>'+
+      '<div class="fila-titulo">'+iconoBadgeImg("ic-persona.png",20)+'<div class="titulo-txt"><h2>'+esc(p.nombre)+' '+esc(p.apellido)+'</h2></div></div>'+
+      '<div class="fila-dato-ic"><span class="ic">'+imgIcono("ic-documento.png",16)+'</span><span class="txt"><span class="k">Cédula</span><span class="v">'+esc(p.cedula)+'</span></span></div>'+
+      '<div class="fila-dato-ic"><span class="ic">'+imgIcono("ic-calendario.png",16)+'</span><span class="txt"><span class="k">Edad</span><span class="v">'+(edad!=null?edad+" años":"—")+'</span></span></div>'+
+      '<div class="fila-dato-ic"><span class="ic">'+imgIcono("ic-calendario.png",16)+'</span><span class="txt"><span class="k">Semanas de embarazo</span><span class="v">'+(semanas!=null?semanas+" semanas":"—")+'</span></span></div>'+
+      '<div class="fila-dato-ic"><span class="ic">'+imgIcono("ic-sobre.png",16)+'</span><span class="txt"><span class="k">Contacto de emergencia</span><span class="v">'+esc(p.ceNombre)+' '+esc(p.ceApellido)+'</span></span></div>'+
       '</div>'+
       resumenUltimo+
       '<button class="btn-primaria con-icono" data-accion="iniciar-control"><span class="ic-izq">'+ic("clipboard",18)+'</span><span class="txt">Registrar control de hoy</span><span class="ic-der">'+ic("arrowRight",16)+'</span></button>'+
@@ -901,6 +942,15 @@
       el.addEventListener("click", function(){
         var a = el.getAttribute("data-accion");
         if(a==="olvide-password"){ estado.pantalla="recuperar"; estado.authError=""; estado.authInfo=""; render(); }
+        else if(a==="ver-pass-restaurar" || a==="ver-pass-respaldo"){
+          var inputId = a==="ver-pass-restaurar" ? "restaurar-pass" : "respaldo-pass";
+          var input = document.getElementById(inputId);
+          if(input){
+            var mostrar = input.type === "password";
+            input.type = mostrar ? "text" : "password";
+            el.innerHTML = ic(mostrar ? "eyeOff" : "eye", 18);
+          }
+        }
         else if(a==="volver-restaurar"){ estado.pantalla="restaurar"; estado.authError=""; estado.authInfo=""; render(); }
         else if(a==="ir-restaurar"){
           if(confirm("Si en este teléfono ya registraste datos sin copia de seguridad, se quedarán aquí (no se moverán a la otra cuenta). ¿Quieres continuar e iniciar sesión con tu copia de seguridad?")){
