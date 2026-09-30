@@ -224,7 +224,10 @@
   #capa-sidebar{display:none;}
 
   .main-wrap{flex:1 1 auto; margin-left:260px; min-height:100vh; display:flex; flex-direction:column;}
-  .main-inner{max-width:760px; width:100%; margin:0 auto; padding:22px 26px 64px; flex:1;}
+  .main-inner{max-width:1000px; width:100%; margin:0 auto; padding:26px 40px 64px; flex:1; box-sizing:border-box;}
+  @media (min-width:1300px){
+    .main-inner{max-width:1100px; padding:30px 50px 70px;}
+  }
   body.pantalla-auth .main-wrap{margin-left:0;}
   body.pantalla-auth #sidebar{display:none;}
 
