@@ -218,7 +218,13 @@
   #sidebar nav button svg{flex:0 0 auto; opacity:0.9;}
   #sidebar nav button.activo{background:rgba(255,255,255,0.94); color:var(--rosa-profunda);}
   #sidebar nav button.activo svg{opacity:1;}
-  #sidebar .sb-ilustracion{margin-top:auto; opacity:0.9; display:flex; justify-content:center;}
+  #sidebar .sb-ilustracion{margin-top:auto; opacity:1; display:flex; justify-content:center; padding-top:20px;}
+  #sidebar .sidebar-foto{
+    background:#fff; padding:8px 8px 4px; border-radius:16px; width:150px;
+    box-shadow:0 14px 28px -10px rgba(0,0,0,0.35); transform:rotate(-2deg);
+  }
+  #sidebar .sidebar-foto img{width:100%; display:block; border-radius:10px;}
+  #sidebar .sidebar-foto .pie{display:block; text-align:center; font-family:"Fraunces",serif; font-style:italic; color:var(--ciruela-suave); font-size:0.72rem; padding:4px 0 2px;}
   #sidebar .sb-cerrar{display:none;}
 
   #capa-sidebar{display:none;}
@@ -523,7 +529,7 @@
       '<nav>'+ items.map(function(it){
         return '<button class="'+(it.activo?"activo":"")+'" data-accion="'+it.accion+'">'+ic(it.icono,19)+'<span>'+it.label+'</span></button>';
       }).join("") +'</nav>'+
-      '<div class="sb-ilustracion">'+ILUSTRACION_SIDEBAR+'</div>';
+      '<div class="sb-ilustracion"><div class="sidebar-foto"><img src="./mama-embarazada.png" alt=""><span class="pie">cuidando de ti 🌷</span></div></div>';
   }
 
   function render(){
