@@ -130,6 +130,8 @@
   .recordatorio-cercano{background:var(--ambar-fondo); color:var(--ambar);}
   .recordatorio-hoy{background:var(--rosa-suave); color:var(--rosa-profunda);}
   .recordatorio-vencido{background:var(--linea); color:var(--ciruela-suave);}
+  .recordatorio-urgente{background:var(--burdeos-fondo); color:var(--burdeos);}
+  .recordatorio-ok{background:var(--salvia-fondo); color:var(--salvia);}
   .respaldo-pendiente{border:1.5px dashed var(--ambar); background:var(--ambar-fondo);}
   .respaldo-pendiente h3{color:var(--ambar);}
   .respaldo-activo{border:1.5px solid var(--salvia); background:var(--salvia-fondo);}
@@ -410,7 +412,9 @@
     close: '<path d="M6 6l12 12M18 6L6 18"/>',
     user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
     eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
-    eyeOff: '<path d="M3 3l18 18"/><path d="M10.6 5.2A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17.7 17.7 0 0 1-3.2 4.1M6.6 6.6C4 8.3 2 12 2 12s3.5 7 10 7c1.4 0 2.6-.3 3.7-.7"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'
+    eyeOff: '<path d="M3 3l18 18"/><path d="M10.6 5.2A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17.7 17.7 0 0 1-3.2 4.1M6.6 6.6C4 8.3 2 12 2 12s3.5 7 10 7c1.4 0 2.6-.3 3.7-.7"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
+    bell: '<path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+    gear: '<circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l1.9-1.5-2-3.4-2.2.9a7 7 0 0 0-2-1.2L14.3 3H9.7l-.4 2.6a7 7 0 0 0-2 1.2l-2.2-.9-2 3.4L4.9 11a7 7 0 0 0 0 2.4L3 14.9l2 3.4 2.2-.9c.6.5 1.3.9 2 1.2l.4 2.6h4.6l.4-2.6c.7-.3 1.4-.7 2-1.2l2.2.9 2-3.4-1.9-1.5c.1-.4.1-.8.1-1.2Z"/>'
   };
   function ic(nombre, tam){
     tam = tam || 20;
@@ -479,10 +483,12 @@
   // ---------- estado ----------
   var estado = { pantalla:"cargando", authError:"", authInfo:"", respaldoError:"", perfil:null, registros:[],
     controlPaso:1, controlDatos:{sistolica:"",diastolica:"",sintomas:{},urgencia:{}}, registroVisto:null,
-    editandoConsulta:false, mostrandoQR:false, mostrarInstalar:false, mostrandoRespaldo:false, sidebarAbierta:false };
+    editandoConsulta:false, mostrandoQR:false, mostrarInstalar:false, mostrandoRespaldo:false, sidebarAbierta:false,
+    consultas:[], mostrandoAgregarConsulta:false, perfilGuardado:"", configMensaje:"" };
   var deferredInstallPrompt = null;
   var uidActual = null;
   var unsubRegistros = null;
+  var unsubConsultas = null;
 
   var app = document.getElementById("app");
   var capaSidebar = document.getElementById("capa-sidebar");
@@ -491,7 +497,7 @@
   }
   var PANTALLAS_ESTILO_TARJETA = ["restaurar","recuperar","sinRedInicial"];
 
-  var NAV_SIDEBAR = ["completarPerfil","panel","control","resultado","historial","detalle"];
+  var NAV_SIDEBAR = ["completarPerfil","panel","control","resultado","historial","detalle","miPerfil","consultas","notificaciones","configuracion"];
 
   function renderSidebar(){
     var sidebarEl = document.getElementById("sidebar");
@@ -500,8 +506,11 @@
     sidebarEl.style.display="flex";
     var items = [
       {accion:"nav-inicio", label:"Inicio", icono:"home", activo:["panel","control","resultado","completarPerfil"].indexOf(estado.pantalla)!==-1},
+      {accion:"nav-mi-perfil", label:"Mi perfil", icono:"user", activo:estado.pantalla==="miPerfil"},
+      {accion:"nav-consultas", label:"Consultas", icono:"calendar", activo:estado.pantalla==="consultas"},
       {accion:"nav-historial", label:"Historial", icono:"clock", activo:["historial","detalle"].indexOf(estado.pantalla)!==-1},
-      {accion:"nav-respaldo", label:"Copia de seguridad", icono:"shield", activo:false}
+      {accion:"nav-notificaciones", label:"Notificaciones", icono:"bell", activo:estado.pantalla==="notificaciones"},
+      {accion:"nav-configuracion", label:"Configuración", icono:"gear", activo:estado.pantalla==="configuracion"}
     ];
     sidebarEl.innerHTML =
       '<button class="sb-cerrar" data-accion="cerrar-sidebar">'+ic("close",16)+'</button>'+
@@ -526,6 +535,10 @@
     else if(estado.pantalla==="resultado") html = vistaResultado();
     else if(estado.pantalla==="historial") html = vistaHistorial();
     else if(estado.pantalla==="detalle") html = vistaDetalle();
+    else if(estado.pantalla==="miPerfil") html = vistaMiPerfil();
+    else if(estado.pantalla==="consultas") html = vistaConsultas();
+    else if(estado.pantalla==="notificaciones") html = vistaNotificaciones();
+    else if(estado.pantalla==="configuracion") html = vistaConfiguracion();
     var esPantallaTarjeta = PANTALLAS_ESTILO_TARJETA.indexOf(estado.pantalla) !== -1;
     var banner = (estado.pantalla!=="cargando" && !navigator.onLine)
       ? '<div class="banner-offline">📶 Sin conexión — lo que registres se guardará y se sincronizará solo al volver internet</div>'
@@ -655,72 +668,111 @@
     { id:"herpes", texto:"Herpes genital" }
   ];
 
+  function camposPerfilHTML(p){
+    p = p || {};
+    function v(campo){ return esc(p[campo]||""); }
+    function marcado(arr,id){ return (p[arr]||[]).indexOf(id)!==-1 ? "checked" : ""; }
+    function radio(campo,valor,porDefecto){ return (p[campo]||porDefecto)===valor ? "checked" : ""; }
+    return (
+      '<div class="campo"><label>Nombre</label><input type="text" name="nombre" value="'+v("nombre")+'" required></div>'+
+      '<div class="campo"><label>Apellido</label><input type="text" name="apellido" value="'+v("apellido")+'" required></div>'+
+      '<div class="campo"><label>Cédula</label><input type="text" name="cedula" value="'+v("cedula")+'" required></div>'+
+      '<div class="fila2">'+
+      '<div class="campo"><label>Fecha de nacimiento</label><input type="date" name="fechaNacimiento" value="'+v("fechaNacimiento")+'" required></div>'+
+      '<div class="campo"><label>Fecha de última regla</label><input type="date" name="fur" value="'+v("fur")+'" required></div>'+
+      '</div>'+
+      '<div class="campo"><label>Dirección</label><input type="text" name="direccion" value="'+v("direccion")+'"></div>'+
+      '<div class="fila2">'+
+      '<div class="campo"><label>Número de teléfono</label><input type="tel" name="telefono" value="'+v("telefono")+'"></div>'+
+      '<div class="campo"><label>Ocupación</label><input type="text" name="ocupacion" value="'+v("ocupacion")+'"></div>'+
+      '</div>'+
+      '<h3 style="margin-top:18px;">Contacto de emergencia</h3>'+
+      '<div class="fila2">'+
+      '<div class="campo"><label>Nombre</label><input type="text" name="ceNombre" value="'+v("ceNombre")+'" required></div>'+
+      '<div class="campo"><label>Apellido</label><input type="text" name="ceApellido" value="'+v("ceApellido")+'" required></div>'+
+      '</div>'+
+      '<div class="campo"><label>Teléfono</label><input type="tel" name="ceTelefono" value="'+v("ceTelefono")+'" required></div>'+
+
+      '<h3 style="margin-top:18px;">Antecedentes personales</h3>'+
+      '<div class="campo"><label>Sufres de: (puedes marcar varias)</label>'+
+      '<div class="checks-grid">'+
+      CONDICIONES_PERSONALES.map(function(c){ return '<label class="check-opcion"><input type="checkbox" name="antecedentesPersonales" value="'+c.id+'" '+marcado("antecedentesPersonales",c.id)+'> '+c.texto+'</label>'; }).join("")+
+      '</div></div>'+
+
+      '<div class="campo"><label>¿Te han hecho alguna cirugía anteriormente? (las cesáreas no cuentan)</label>'+
+      '<div class="sn-inline">'+
+      '<label class="opcion-inline"><input type="radio" name="cirugiaPrevia" value="si" data-detalle="detalle-cirugia" '+radio("cirugiaPrevia","si","no")+'> Sí</label>'+
+      '<label class="opcion-inline"><input type="radio" name="cirugiaPrevia" value="no" data-detalle="detalle-cirugia" '+radio("cirugiaPrevia","no","no")+'> No</label>'+
+      '</div></div>'+
+      '<div class="campo detalle-condicional" id="detalle-cirugia" style="display:'+(p.cirugiaPrevia==="si"?"block":"none")+';"><label>¿Cuál cirugía?</label><input type="text" name="cirugiaPreviaDetalle" value="'+v("cirugiaPreviaDetalle")+'"></div>'+
+
+      '<div class="campo"><label>¿Eres alérgica a algún medicamento?</label>'+
+      '<div class="sn-inline">'+
+      '<label class="opcion-inline"><input type="radio" name="alergiaMedicamento" value="si" data-detalle="detalle-alergia" '+radio("alergiaMedicamento","si","no")+'> Sí</label>'+
+      '<label class="opcion-inline"><input type="radio" name="alergiaMedicamento" value="no" data-detalle="detalle-alergia" '+radio("alergiaMedicamento","no","no")+'> No</label>'+
+      '</div></div>'+
+      '<div class="campo detalle-condicional" id="detalle-alergia" style="display:'+(p.alergiaMedicamento==="si"?"block":"none")+';"><label>¿A cuál medicamento?</label><input type="text" name="alergiaMedicamentoDetalle" value="'+v("alergiaMedicamentoDetalle")+'"></div>'+
+
+      '<h3 style="margin-top:18px;">Antecedentes ginecoobstétricos</h3>'+
+      '<div class="fila2">'+
+      '<div class="campo"><label>¿A qué edad te desarrollaste? (años)</label><input type="number" name="menarquiaEdad" min="6" max="20" value="'+v("menarquiaEdad")+'"></div>'+
+      '<div class="campo"><label>¿Cuántos días te dura la menstruación?</label><input type="number" name="duracionMenstruacion" min="1" max="15" value="'+v("duracionMenstruacion")+'"></div>'+
+      '</div>'+
+      '<div class="fila2">'+
+      '<div class="campo"><label>¿A qué edad tuviste tu primera relación sexual?</label><input type="number" name="edadPrimeraRelacion" min="8" max="60" value="'+v("edadPrimeraRelacion")+'"></div>'+
+      '<div class="campo"><label>¿Cuántas parejas sexuales has tenido?</label><input type="number" name="numeroParejasSexuales" min="0" value="'+v("numeroParejasSexuales")+'"></div>'+
+      '</div>'+
+      '<div class="campo"><label>¿Has sido diagnosticada con alguna enfermedad de transmisión sexual?</label>'+
+      '<div class="sn-inline">'+
+      '<label class="opcion-inline"><input type="radio" name="etsDiagnostico" value="si" data-detalle="detalle-ets" '+radio("etsDiagnostico","si","no")+'> Sí</label>'+
+      '<label class="opcion-inline"><input type="radio" name="etsDiagnostico" value="no" data-detalle="detalle-ets" '+radio("etsDiagnostico","no","no")+'> No</label>'+
+      '</div></div>'+
+      '<div class="campo detalle-condicional" id="detalle-ets" style="display:'+(p.etsDiagnostico==="si"?"block":"none")+';">'+
+      '<label>¿Cuál(es)? (VPH, sífilis, gonorrea, chancro, herpes genital, entre otras)</label>'+
+      '<div class="checks-grid">'+
+      TIPOS_ETS.map(function(e){ return '<label class="check-opcion"><input type="checkbox" name="etsTipos" value="'+e.id+'" '+marcado("etsTipos",e.id)+'> '+e.texto+'</label>'; }).join("")+
+      '</div>'+
+      '<input type="text" name="etsOtraDetalle" placeholder="Otra (especifica)" style="margin-top:8px;" value="'+v("etsOtraDetalle")+'">'+
+      '</div>'
+    );
+  }
+
+  function datosFormularioPerfil(fd){
+    return {
+      nombre:fd.get("nombre"), apellido:fd.get("apellido"), cedula:fd.get("cedula"),
+      fechaNacimiento:fd.get("fechaNacimiento"), fur:fd.get("fur"), direccion:fd.get("direccion"),
+      telefono:fd.get("telefono"), ocupacion:fd.get("ocupacion"),
+      ceNombre:fd.get("ceNombre"), ceApellido:fd.get("ceApellido"), ceTelefono:fd.get("ceTelefono"),
+      antecedentesPersonales: fd.getAll("antecedentesPersonales"),
+      cirugiaPrevia: fd.get("cirugiaPrevia") || "no",
+      cirugiaPreviaDetalle: fd.get("cirugiaPreviaDetalle") || "",
+      alergiaMedicamento: fd.get("alergiaMedicamento") || "no",
+      alergiaMedicamentoDetalle: fd.get("alergiaMedicamentoDetalle") || "",
+      menarquiaEdad: fd.get("menarquiaEdad") || "",
+      duracionMenstruacion: fd.get("duracionMenstruacion") || "",
+      edadPrimeraRelacion: fd.get("edadPrimeraRelacion") || "",
+      numeroParejasSexuales: fd.get("numeroParejasSexuales") || "",
+      etsDiagnostico: fd.get("etsDiagnostico") || "no",
+      etsTipos: fd.getAll("etsTipos"),
+      etsOtraDetalle: fd.get("etsOtraDetalle") || ""
+    };
+  }
+
+  function ligarCondicionales(form){
+    form.querySelectorAll("input[data-detalle]").forEach(function(radio){
+      radio.addEventListener("change", function(){
+        var det = document.getElementById(radio.getAttribute("data-detalle"));
+        if(det) det.style.display = (radio.value === "si" && radio.checked) ? "block" : "none";
+      });
+    });
+  }
+
   function vistaCompletarPerfil(){
     return encabezado(auth.currentUser ? auth.currentUser.email : "") +
       '<form id="form-perfil" class="panel">'+
       '<h2>Completa tu perfil</h2>'+
       '<p class="muted">Estos datos se guardan una sola vez.</p>'+
-      '<div class="campo"><label>Nombre</label><input type="text" name="nombre" required></div>'+
-      '<div class="campo"><label>Apellido</label><input type="text" name="apellido" required></div>'+
-      '<div class="campo"><label>Cédula</label><input type="text" name="cedula" required></div>'+
-      '<div class="fila2">'+
-      '<div class="campo"><label>Fecha de nacimiento</label><input type="date" name="fechaNacimiento" required></div>'+
-      '<div class="campo"><label>Fecha de última regla</label><input type="date" name="fur" required></div>'+
-      '</div>'+
-      '<div class="campo"><label>Dirección</label><input type="text" name="direccion"></div>'+
-      '<div class="fila2">'+
-      '<div class="campo"><label>Número de teléfono</label><input type="tel" name="telefono"></div>'+
-      '<div class="campo"><label>Ocupación</label><input type="text" name="ocupacion"></div>'+
-      '</div>'+
-      '<h3 style="margin-top:18px;">Contacto de emergencia</h3>'+
-      '<div class="fila2">'+
-      '<div class="campo"><label>Nombre</label><input type="text" name="ceNombre" required></div>'+
-      '<div class="campo"><label>Apellido</label><input type="text" name="ceApellido" required></div>'+
-      '</div>'+
-      '<div class="campo"><label>Teléfono</label><input type="tel" name="ceTelefono" required></div>'+
-
-      '<h3 style="margin-top:18px;">Antecedentes personales</h3>'+
-      '<div class="campo"><label>Sufres de: (puedes marcar varias)</label>'+
-      '<div class="checks-grid">'+
-      CONDICIONES_PERSONALES.map(function(c){ return '<label class="check-opcion"><input type="checkbox" name="antecedentesPersonales" value="'+c.id+'"> '+c.texto+'</label>'; }).join("")+
-      '</div></div>'+
-
-      '<div class="campo"><label>¿Te han hecho alguna cirugía anteriormente? (las cesáreas no cuentan)</label>'+
-      '<div class="sn-inline">'+
-      '<label class="opcion-inline"><input type="radio" name="cirugiaPrevia" value="si" data-detalle="detalle-cirugia"> Sí</label>'+
-      '<label class="opcion-inline"><input type="radio" name="cirugiaPrevia" value="no" data-detalle="detalle-cirugia" checked> No</label>'+
-      '</div></div>'+
-      '<div class="campo detalle-condicional" id="detalle-cirugia" style="display:none;"><label>¿Cuál cirugía?</label><input type="text" name="cirugiaPreviaDetalle"></div>'+
-
-      '<div class="campo"><label>¿Eres alérgica a algún medicamento?</label>'+
-      '<div class="sn-inline">'+
-      '<label class="opcion-inline"><input type="radio" name="alergiaMedicamento" value="si" data-detalle="detalle-alergia"> Sí</label>'+
-      '<label class="opcion-inline"><input type="radio" name="alergiaMedicamento" value="no" data-detalle="detalle-alergia" checked> No</label>'+
-      '</div></div>'+
-      '<div class="campo detalle-condicional" id="detalle-alergia" style="display:none;"><label>¿A cuál medicamento?</label><input type="text" name="alergiaMedicamentoDetalle"></div>'+
-
-      '<h3 style="margin-top:18px;">Antecedentes ginecoobstétricos</h3>'+
-      '<div class="fila2">'+
-      '<div class="campo"><label>¿A qué edad te desarrollaste? (años)</label><input type="number" name="menarquiaEdad" min="6" max="20"></div>'+
-      '<div class="campo"><label>¿Cuántos días te dura la menstruación?</label><input type="number" name="duracionMenstruacion" min="1" max="15"></div>'+
-      '</div>'+
-      '<div class="fila2">'+
-      '<div class="campo"><label>¿A qué edad tuviste tu primera relación sexual?</label><input type="number" name="edadPrimeraRelacion" min="8" max="60"></div>'+
-      '<div class="campo"><label>¿Cuántas parejas sexuales has tenido?</label><input type="number" name="numeroParejasSexuales" min="0"></div>'+
-      '</div>'+
-      '<div class="campo"><label>¿Has sido diagnosticada con alguna enfermedad de transmisión sexual?</label>'+
-      '<div class="sn-inline">'+
-      '<label class="opcion-inline"><input type="radio" name="etsDiagnostico" value="si" data-detalle="detalle-ets"> Sí</label>'+
-      '<label class="opcion-inline"><input type="radio" name="etsDiagnostico" value="no" data-detalle="detalle-ets" checked> No</label>'+
-      '</div></div>'+
-      '<div class="campo detalle-condicional" id="detalle-ets" style="display:none;">'+
-      '<label>¿Cuál(es)? (VPH, sífilis, gonorrea, chancro, herpes genital, entre otras)</label>'+
-      '<div class="checks-grid">'+
-      TIPOS_ETS.map(function(e){ return '<label class="check-opcion"><input type="checkbox" name="etsTipos" value="'+e.id+'"> '+e.texto+'</label>'; }).join("")+
-      '</div>'+
-      '<input type="text" name="etsOtraDetalle" placeholder="Otra (especifica)" style="margin-top:8px;">'+
-      '</div>'+
-
+      camposPerfilHTML(null)+
       '<h3 style="margin-top:18px;">Próxima consulta</h3>'+
       '<div class="campo"><label>Fecha de tu próxima consulta (opcional)</label><input type="date" name="proximaConsulta"></div>'+
       '<button type="submit" class="btn-primaria">Guardar y continuar</button>'+
@@ -790,37 +842,20 @@
     var usuarioActual = auth.currentUser;
     var esAnonima = usuarioActual && usuarioActual.isAnonymous;
     if(!esAnonima && usuarioActual){
-      seccionRespaldo = '<div class="panel respaldo-activo">'+
-        '<div class="fila-titulo">'+iconoBadge("shield","salvia",20)+'<div class="titulo-txt"><h3>Copia de seguridad activa</h3></div></div>'+
-        '<p class="muted">Tus datos están respaldados con <b>'+esc(usuarioActual.email)+'</b>. Puedes iniciar sesión con este correo desde cualquier otro teléfono para recuperarlos.</p>'+
-        '</div>';
-    } else if(estado.mostrandoRespaldo){
-      seccionRespaldo = '<div class="panel">'+
-        '<div class="fila-titulo">'+iconoBadge("shield",null,20)+'<div class="titulo-txt"><h3>Copia de seguridad</h3></div></div>'+
-        (estado.respaldoError ? '<div class="error-msg">'+esc(estado.respaldoError)+'</div>' : '')+
-        '<p class="muted">Agrega tu correo para no perder tus datos si cambias o formateas el teléfono.</p>'+
-        '<form id="form-respaldo">'+
-        '<div class="campo campo-icono"><label>Correo electrónico</label>'+imgIcono("ic-sobre.png",18)+'<input type="email" id="respaldo-email" required></div>'+
-        '<div class="campo campo-icono"><label>Contraseña (mínimo 6 caracteres)</label>'+imgIcono("ic-candado.png",18)+
-        '<input type="password" id="respaldo-pass" required minlength="6">'+
-        '<button type="button" class="ojo" data-accion="ver-pass-respaldo">'+ic("eye",18)+'</button></div>'+
-        '<button type="submit" class="btn-primaria">Guardar copia de seguridad</button>'+
-        '</form>'+
-        '<button class="btn-texto" data-accion="ocultar-respaldo">Cancelar</button>'+
-        '</div>';
+      seccionRespaldo = '<div class="recordatorio recordatorio-ok">'+iconoBadge("shield","salvia",20)+
+        '<span style="flex:1;">Copia de seguridad activa con <b>'+esc(usuarioActual.email)+'</b>.</span></div>';
     } else {
-      seccionRespaldo = '<div class="panel respaldo-pendiente">'+
-        '<div class="fila-titulo">'+iconoBadge("shield","ambar",20)+'<div class="titulo-txt"><h3>Copia de seguridad</h3></div></div>'+
-        '<p class="muted">Tus datos solo están guardados en este teléfono. Si lo pierdes o lo formateas, no se pueden recuperar.</p>'+
-        '<button class="btn-secundaria con-icono" data-accion="mostrar-respaldo"><span class="ic-izq">'+ic("shield",18)+'</span><span class="txt">Agregar copia de seguridad</span><span class="ic-der">'+ic("arrowRight",16)+'</span></button>'+
-        '</div>';
+      seccionRespaldo = '<div class="recordatorio recordatorio-cercano">'+iconoBadge("shield","ambar",20)+
+        '<span style="flex:1;">Tus datos solo están en este teléfono.</span>'+
+        '<a class="enlace-flecha" data-accion="nav-configuracion">Respaldar '+ic("arrowRight",15)+'</a></div>';
     }
 
     return encabezado(p.nombre) +
       recordatorio+
       seccionRespaldo+
       '<div class="panel">'+
-      '<div class="fila-titulo">'+iconoBadgeImg("ic-persona.png",20)+'<div class="titulo-txt"><h2>'+esc(p.nombre)+' '+esc(p.apellido)+'</h2></div></div>'+
+      '<div class="fila-titulo con-accion">'+iconoBadgeImg("ic-persona.png",20)+'<div class="titulo-txt"><h2>'+esc(p.nombre)+' '+esc(p.apellido)+'</h2></div>'+
+      '<a class="enlace-flecha" data-accion="nav-mi-perfil">'+ic("pencil",15)+' Editar</a></div>'+
       '<div class="fila-dato-ic"><span class="ic">'+imgIcono("ic-documento.png",16)+'</span><span class="txt"><span class="k">Cédula</span><span class="v">'+esc(p.cedula)+'</span></span></div>'+
       '<div class="fila-dato-ic"><span class="ic">'+imgIcono("ic-calendario.png",16)+'</span><span class="txt"><span class="k">Edad</span><span class="v">'+(edad!=null?edad+" años":"—")+'</span></span></div>'+
       '<div class="fila-dato-ic"><span class="ic">'+imgIcono("ic-calendario.png",16)+'</span><span class="txt"><span class="k">Semanas de embarazo</span><span class="v">'+(semanas!=null?semanas+" semanas":"—")+'</span></span></div>'+
@@ -936,6 +971,142 @@
       '<button class="btn-texto" data-accion="volver-historial">← Volver al historial</button>';
   }
 
+  // ---------- Mi perfil (editable) ----------
+  function vistaMiPerfil(){
+    var p = estado.perfil;
+    return encabezado(p.nombre) +
+      (estado.perfilGuardado ? '<div class="info-msg">'+esc(estado.perfilGuardado)+'</div>' : '')+
+      '<form id="form-mi-perfil" class="panel">'+
+      '<div class="fila-titulo">'+iconoBadgeImg("ic-persona.png",20)+'<div class="titulo-txt"><h2>Mi perfil</h2><p class="muted" style="margin:0;">Edita tus datos cuando lo necesites.</p></div></div>'+
+      camposPerfilHTML(p)+
+      '<button type="submit" class="btn-primaria con-icono" style="margin-top:12px;"><span class="ic-izq">'+ic("pencil",18)+'</span><span class="txt">Guardar cambios</span></button>'+
+      '</form>';
+  }
+
+  // ---------- Consultas ----------
+  function vistaConsultas(){
+    var p = estado.perfil;
+    var proxima = "";
+    if(estado.editandoConsulta){
+      proxima = '<div class="panel"><h3>Próxima consulta</h3>'+
+        '<form id="form-consulta">'+
+        '<div class="campo"><input type="date" name="proximaConsulta" value="'+esc(p.proximaConsulta||"")+'"></div>'+
+        '<div class="btn-fila"><button type="button" class="btn-secundaria" data-accion="cancelar-consulta">Cancelar</button>'+
+        '<button type="submit" class="btn-primaria">Guardar</button></div>'+
+        '</form></div>';
+    } else {
+      var texto = p.proximaConsulta ? ("Tu próxima consulta es el "+formatoFecha(p.proximaConsulta)+".") : "Aún no tienes una fecha de consulta guardada.";
+      proxima = '<div class="panel"><div class="fila-titulo">'+iconoBadgeImg("ic-calendario.png",20)+'<div class="titulo-txt"><h3>Próxima consulta</h3><p class="muted" style="margin:0;">'+texto+'</p></div></div>'+
+        '<button class="btn-secundaria con-icono" data-accion="editar-consulta"><span class="ic-izq">'+ic("pencil",16)+'</span><span class="txt">'+(p.proximaConsulta?"Editar fecha":"Agregar fecha")+'</span></button>'+
+        '</div>';
+    }
+
+    var lista = "";
+    if(estado.mostrandoAgregarConsulta){
+      lista += '<div class="panel"><h3>Registrar consulta</h3>'+
+        '<form id="form-nueva-consulta">'+
+        '<div class="campo"><label>Fecha</label><input type="date" name="fecha" required></div>'+
+        '<div class="campo"><label>Notas (opcional)</label><input type="text" name="nota" placeholder="Ej: todo bien, próxima eco en 4 semanas"></div>'+
+        '<div class="btn-fila"><button type="button" class="btn-secundaria" data-accion="cancelar-nueva-consulta">Cancelar</button>'+
+        '<button type="submit" class="btn-primaria">Guardar</button></div>'+
+        '</form></div>';
+    }
+    lista += '<div class="panel"><div class="fila-titulo con-accion">'+iconoBadgeImg("ic-calendario2.png",20)+'<div class="titulo-txt"><h3>Consultas anteriores</h3></div>'+
+      (estado.mostrandoAgregarConsulta ? '' : '<a class="enlace-flecha" data-accion="mostrar-nueva-consulta">'+ic("plus",15)+' Agregar</a>')+
+      '</div>';
+    if(estado.consultas.length===0){
+      lista += '<p class="muted">Todavía no has registrado ninguna consulta.</p>';
+    } else {
+      lista += estado.consultas.map(function(c){
+        return '<div class="fila-dato-ic"><span class="ic">'+imgIcono("ic-calendario2.png",16)+'</span><span class="txt"><span class="k">'+esc(formatoFecha(c.fecha))+'</span>'+(c.nota?'<span class="v" style="font-weight:500;">'+esc(c.nota)+'</span>':'')+'</span></div>';
+      }).join("");
+    }
+    lista += '</div>';
+
+    return encabezado(p.nombre) + proxima + lista;
+  }
+
+  // ---------- Notificaciones (avisos calculados a partir de tus datos) ----------
+  function vistaNotificaciones(){
+    var p = estado.perfil;
+    var avisos = [];
+    var ultimo = estado.registros.length ? estado.registros[0] : null;
+
+    if(!estado.registros.length){
+      avisos.push({tono:"neutro", icono:"ic-calendario.png", texto:"Aún no has registrado tu primer control. Hazlo desde Inicio."});
+    }
+    if(ultimo && ultimo.urgenciasActivas && ultimo.urgenciasActivas.length){
+      avisos.push({tono:"urgente", icono:"ic-latido.png", texto:"Tu último control ("+formatoFecha(ultimo.fecha)+") marcó una señal de atención médica inmediata."});
+    }
+    if(ultimo && ultimo.bp && ultimo.bp.nivel===3){
+      avisos.push({tono:"urgente", icono:"ic-latido.png", texto:"Tu presión del "+formatoFecha(ultimo.fecha)+" fue alta ("+esc(ultimo.sistolica)+"/"+esc(ultimo.diastolica)+" mmHg). Acude al médico."});
+    } else if(ultimo && ultimo.bp && ultimo.bp.nivel===2){
+      avisos.push({tono:"ambar", icono:"ic-latido.png", texto:"Tu presión del "+formatoFecha(ultimo.fecha)+" requiere vigilancia."});
+    }
+    if(estado.registros.length>=2){
+      var t = detectarAumentoTension(Number(estado.registros[0].sistolica), Number(estado.registros[0].diastolica), estado.registros[0].bp, estado.registros[1]);
+      if(t) avisos.push({tono:"ambar", icono:"ic-latido.png", texto:"Tu presión subió respecto al control anterior."});
+    }
+    if(p.proximaConsulta){
+      var dias = diasHasta(p.proximaConsulta);
+      if(dias!=null && dias>=0 && dias<=3){
+        avisos.push({tono: dias===0?"hoy":"ambar", icono:"ic-calendario.png", texto: dias===0 ? "¡Hoy es tu consulta!" : "Tu consulta es en "+dias+" día"+(dias===1?"":"s")+"."});
+      } else if(dias!=null && dias<0){
+        avisos.push({tono:"neutro", icono:"ic-calendario.png", texto:"Tu consulta del "+formatoFecha(p.proximaConsulta)+" ya pasó. Actualiza la fecha si ya fuiste."});
+      }
+    }
+    if(auth.currentUser && auth.currentUser.isAnonymous){
+      avisos.push({tono:"ambar", icono:"ic-candado.png", texto:"No tienes copia de seguridad activada. Actívala desde Configuración."});
+    }
+    if(avisos.length===0){
+      avisos.push({tono:"ok", icono:"ic-latido.png", texto:"Todo en orden por ahora. Sigue registrando tus controles."});
+    }
+
+    var MAPA_CLASE = {urgente:"recordatorio-urgente", ambar:"recordatorio-cercano", hoy:"recordatorio-hoy", neutro:"recordatorio-neutro", ok:"recordatorio-ok"};
+    var html = avisos.map(function(a){
+      return '<div class="recordatorio '+MAPA_CLASE[a.tono]+'" style="align-items:flex-start;">'+iconoBadgeImg(a.icono,20)+'<span style="flex:1;">'+esc(a.texto)+'</span></div>';
+    }).join("");
+
+    return encabezado(p.nombre) + '<div class="panel"><h2>Notificaciones</h2><p class="muted">Avisos generados según tus últimos registros.</p></div>' + html;
+  }
+
+  // ---------- Configuración ----------
+  function vistaConfiguracion(){
+    var user = auth.currentUser;
+    var esAnonima = user && user.isAnonymous;
+    var cuenta;
+    if(esAnonima){
+      cuenta = '<div class="panel respaldo-pendiente">'+
+        '<div class="fila-titulo">'+iconoBadge("shield","ambar",20)+'<div class="titulo-txt"><h3>Sin copia de seguridad</h3></div></div>'+
+        '<p class="muted">Tus datos solo están guardados en este teléfono. Si lo pierdes o lo formateas, no se pueden recuperar.</p>'+
+        (estado.mostrandoRespaldo
+          ? ((estado.respaldoError ? '<div class="error-msg">'+esc(estado.respaldoError)+'</div>' : '')+
+             '<form id="form-respaldo">'+
+             '<div class="campo campo-icono"><label>Correo electrónico</label>'+imgIcono("ic-sobre.png",18)+'<input type="email" id="respaldo-email" required></div>'+
+             '<div class="campo campo-icono"><label>Contraseña (mínimo 6 caracteres)</label>'+imgIcono("ic-candado.png",18)+
+             '<input type="password" id="respaldo-pass" required minlength="6">'+
+             '<button type="button" class="ojo" data-accion="ver-pass-respaldo">'+ic("eye",18)+'</button></div>'+
+             '<button type="submit" class="btn-primaria">Guardar copia de seguridad</button>'+
+             '</form>'+
+             '<button class="btn-texto" data-accion="ocultar-respaldo">Cancelar</button>')
+          : '<button class="btn-secundaria con-icono" data-accion="mostrar-respaldo"><span class="ic-izq">'+ic("shield",18)+'</span><span class="txt">Agregar copia de seguridad</span></button>')+
+        '</div>';
+    } else {
+      cuenta = '<div class="panel respaldo-activo">'+
+        '<div class="fila-titulo">'+iconoBadge("shield","salvia",20)+'<div class="titulo-txt"><h3>Copia de seguridad activa</h3></div></div>'+
+        '<p class="muted">Correo vinculado: <b>'+esc(user.email)+'</b></p>'+
+        '<button class="btn-secundaria con-icono" data-accion="cambiar-password"><span class="ic-izq">'+ic("pencil",16)+'</span><span class="txt">Enviar enlace para cambiar contraseña</span></button>'+
+        (estado.configMensaje ? '<p class="info-msg" style="margin-top:10px;">'+esc(estado.configMensaje)+'</p>' : '')+
+        '</div>';
+    }
+
+    return encabezado(estado.perfil.nombre) +
+      '<div class="panel"><h2>Configuración</h2></div>'+
+      cuenta+
+      '<div class="panel"><h3>Acerca de la app</h3><p class="muted">Mamá Alerta — control prenatal diario, con alertas de presión arterial y señales de atención médica.<br>Versión 1.0</p></div>'+
+      (esAnonima ? '' : '<button class="btn-texto" data-accion="cerrar-sesion">Cerrar sesión</button>');
+  }
+
   // ---------- eventos ----------
   function ligarEventos(){
     document.querySelectorAll("[data-accion]").forEach(function(el){
@@ -994,10 +1165,23 @@
         else if(a==="cerrar-sidebar"){ estado.sidebarAbierta=false; render(); }
         else if(a==="nav-inicio"){ estado.sidebarAbierta=false; estado.pantalla="panel"; render(); }
         else if(a==="nav-historial"){ estado.sidebarAbierta=false; estado.pantalla="historial"; render(); }
-        else if(a==="nav-respaldo"){
-          estado.sidebarAbierta=false; estado.pantalla="panel";
-          if(auth.currentUser && auth.currentUser.isAnonymous) estado.mostrandoRespaldo=true;
-          render();
+        else if(a==="nav-mi-perfil"){ estado.sidebarAbierta=false; estado.pantalla="miPerfil"; estado.perfilGuardado=""; render(); }
+        else if(a==="nav-consultas"){ estado.sidebarAbierta=false; estado.pantalla="consultas"; suscribirConsultas(); render(); }
+        else if(a==="nav-notificaciones"){ estado.sidebarAbierta=false; estado.pantalla="notificaciones"; render(); }
+        else if(a==="nav-configuracion"){ estado.sidebarAbierta=false; estado.pantalla="configuracion"; estado.configMensaje=""; render(); }
+        else if(a==="mostrar-nueva-consulta"){ estado.mostrandoAgregarConsulta=true; render(); }
+        else if(a==="cancelar-nueva-consulta"){ estado.mostrandoAgregarConsulta=false; render(); }
+        else if(a==="cambiar-password"){
+          var correo = auth.currentUser && auth.currentUser.email;
+          if(correo){
+            sendPasswordResetEmail(auth, correo).then(function(){
+              estado.configMensaje = "Te enviamos un enlace a "+correo+" para cambiar tu contraseña.";
+              render();
+            }).catch(function(err){
+              estado.configMensaje = mensajeErrorAuth(err.code);
+              render();
+            });
+          }
         }
         else if(a==="ver-detalle"){ estado.registroVisto=Number(el.getAttribute("data-idx")); estado.pantalla="detalle"; render(); }
         else if(a==="volver-historial"){ estado.pantalla="historial"; render(); }
@@ -1108,40 +1292,39 @@
       var inFur = formPerfil.querySelector('input[name="fur"]');
       if(inNac) inNac.max = hoyISO;
       if(inFur) inFur.max = hoyISO;
-      // Mostrar/ocultar los campos de detalle según la respuesta Sí/No
-      formPerfil.querySelectorAll("input[data-detalle]").forEach(function(radio){
-        radio.addEventListener("change", function(){
-          var det = document.getElementById(radio.getAttribute("data-detalle"));
-          if(det) det.style.display = (radio.value === "si" && radio.checked) ? "block" : "none";
-        });
-      });
+      ligarCondicionales(formPerfil);
 
       formPerfil.addEventListener("submit", function(ev){
         ev.preventDefault();
         var fd = new FormData(formPerfil);
-        var perfil = {
-          nombre:fd.get("nombre"), apellido:fd.get("apellido"), cedula:fd.get("cedula"),
-          fechaNacimiento:fd.get("fechaNacimiento"), fur:fd.get("fur"), direccion:fd.get("direccion"),
-          telefono:fd.get("telefono"), ocupacion:fd.get("ocupacion"),
-          ceNombre:fd.get("ceNombre"), ceApellido:fd.get("ceApellido"), ceTelefono:fd.get("ceTelefono"),
-          antecedentesPersonales: fd.getAll("antecedentesPersonales"),
-          cirugiaPrevia: fd.get("cirugiaPrevia") || "no",
-          cirugiaPreviaDetalle: fd.get("cirugiaPreviaDetalle") || "",
-          alergiaMedicamento: fd.get("alergiaMedicamento") || "no",
-          alergiaMedicamentoDetalle: fd.get("alergiaMedicamentoDetalle") || "",
-          menarquiaEdad: fd.get("menarquiaEdad") || "",
-          duracionMenstruacion: fd.get("duracionMenstruacion") || "",
-          edadPrimeraRelacion: fd.get("edadPrimeraRelacion") || "",
-          numeroParejasSexuales: fd.get("numeroParejasSexuales") || "",
-          etsDiagnostico: fd.get("etsDiagnostico") || "no",
-          etsTipos: fd.getAll("etsTipos"),
-          etsOtraDetalle: fd.get("etsOtraDetalle") || "",
-          proximaConsulta: fd.get("proximaConsulta") || ""
-        };
+        var perfil = datosFormularioPerfil(fd);
+        perfil.proximaConsulta = fd.get("proximaConsulta") || "";
         setDoc(doc(dbase,"usuarias",uidActual), perfil).then(function(){
           estado.perfil = perfil;
           estado.pantalla = "panel";
           suscribirRegistros();
+          render();
+        });
+      });
+    }
+
+    var formMiPerfil = document.getElementById("form-mi-perfil");
+    if(formMiPerfil){
+      var hoyISO2 = fechaHoyISO();
+      var inNac2 = formMiPerfil.querySelector('input[name="fechaNacimiento"]');
+      var inFur2 = formMiPerfil.querySelector('input[name="fur"]');
+      if(inNac2) inNac2.max = hoyISO2;
+      if(inFur2) inFur2.max = hoyISO2;
+      ligarCondicionales(formMiPerfil);
+
+      formMiPerfil.addEventListener("submit", function(ev){
+        ev.preventDefault();
+        var fd = new FormData(formMiPerfil);
+        var perfil = datosFormularioPerfil(fd);
+        perfil.proximaConsulta = estado.perfil.proximaConsulta || "";
+        setDoc(doc(dbase,"usuarias",uidActual), perfil).then(function(){
+          estado.perfil = perfil;
+          estado.perfilGuardado = "Tus datos se guardaron correctamente.";
           render();
         });
       });
@@ -1157,6 +1340,20 @@
           estado.editandoConsulta = false;
           render();
         });
+      });
+    }
+
+    var formNuevaConsulta = document.getElementById("form-nueva-consulta");
+    if(formNuevaConsulta){
+      formNuevaConsulta.addEventListener("submit", function(ev){
+        ev.preventDefault();
+        var fd = new FormData(formNuevaConsulta);
+        var nueva = { fecha: fd.get("fecha"), nota: fd.get("nota")||"", creado: Date.now() };
+        addDoc(collection(dbase,"usuarias",uidActual,"consultas"), nueva).catch(function(err){
+          console.error("Error al guardar la consulta:", err);
+        });
+        estado.mostrandoAgregarConsulta = false;
+        render();
       });
     }
 
@@ -1265,11 +1462,21 @@
     });
   }
 
+  function suscribirConsultas(){
+    if(unsubConsultas) return; // ya suscrita
+    var q = query(collection(dbase,"usuarias",uidActual,"consultas"), orderBy("creado","desc"));
+    unsubConsultas = onSnapshot(q, function(snap){
+      estado.consultas = snap.docs.map(function(d){ return d.data(); });
+      if(estado.pantalla==="consultas") render();
+    });
+  }
+
   // ---------- ciclo de autenticación ----------
   onAuthStateChanged(auth, function(user){
     if(unsubRegistros){ unsubRegistros(); unsubRegistros=null; }
+    if(unsubConsultas){ unsubConsultas(); unsubConsultas=null; }
     if(!user){
-      uidActual = null; estado.perfil = null; estado.registros = [];
+      uidActual = null; estado.perfil = null; estado.registros = []; estado.consultas = [];
       // No hay sesión: iniciamos una anónima automáticamente, sin pedirle
       // nada a la usuaria. onAuthStateChanged volverá a dispararse solo
       // cuando esa sesión anónima quede creada.
