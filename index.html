@@ -146,6 +146,20 @@
 
   .qr-contenedor{display:flex; justify-content:center; padding:14px 0; background:#fff; border-radius:12px;}
 
+  .panel-decorado{position:relative; overflow:hidden;}
+  .panel-decorado::after{
+    content:""; position:absolute; right:-6px; bottom:-8px; width:95px; height:105px;
+    background:url("./hojas-flores.png") no-repeat right bottom/contain;
+    opacity:0.4; pointer-events:none;
+  }
+
+  .btn-fila-compartir{display:flex; gap:8px; margin:12px 0; flex-wrap:wrap;}
+  .btn-compartir{
+    flex:1; min-width:100px; text-align:center; background:var(--crema); border:1.5px solid var(--linea);
+    border-radius:10px; padding:10px 8px; font-size:0.85rem; font-weight:700; color:var(--ciruela);
+    text-decoration:none; cursor:pointer; font-family:inherit;
+  }
+
   .checks-grid{display:flex; flex-wrap:wrap; gap:8px 14px; margin-top:6px;}
   .check-opcion{display:flex; align-items:center; gap:6px; font-size:0.88rem; font-weight:500; color:var(--ciruela); flex:1 1 45%; min-width:150px;}
   .check-opcion input{width:auto;}
@@ -435,13 +449,17 @@
   // Variante con los iconos PNG reales (solo para fondos claros/neutros —
   // llevan el color marrón ya "quemado" en el PNG, así que no sirven sobre
   // fondos oscuros como la barra lateral).
+  // onerror: si el PNG no carga (404, ruta mal escrita, etc.) lo hacemos
+  // IMOSIBLE de ignorar en una captura, en vez de desaparecer en silencio.
+  var ONERROR_DIAGNOSTICO = "this.onerror=null; this.style.background='#ffe100'; this.style.border='2px solid red'; this.style.width=(this.getAttribute('data-tam')||'20')+'px'; this.style.height=this.style.width; this.alt='⚠';";
+
   function iconoBadgeImg(archivo, tam){
     tam = tam || 20;
-    return '<div class="icono-badge"><img src="./'+archivo+'" style="width:'+tam+'px; height:'+tam+'px; display:block;" alt=""></div>';
+    return '<div class="icono-badge"><img src="./'+archivo+'" data-tam="'+tam+'" style="width:'+tam+'px; height:'+tam+'px; display:block;" alt="" onerror="'+ONERROR_DIAGNOSTICO+'"></div>';
   }
   function imgIcono(archivo, tam){
     tam = tam || 16;
-    return '<img src="./'+archivo+'" style="width:'+tam+'px; height:'+tam+'px; display:block;" alt="">';
+    return '<img src="./'+archivo+'" data-tam="'+tam+'" style="width:'+tam+'px; height:'+tam+'px; display:block;" alt="" onerror="'+ONERROR_DIAGNOSTICO+'">';
   }
 
   // Ilustración decorativa simple (silueta + hojas) para el pie de la barra lateral
@@ -829,7 +847,7 @@
     var resumenUltimo = "";
     if(ultimo){
       var claveTono = ultimo.bp.clave==="n3"?"burdeos":(ultimo.bp.clave==="n2"?"ambar":"salvia");
-      resumenUltimo = '<div class="panel">'+
+      resumenUltimo = '<div class="panel panel-decorado">'+
         '<div class="fila-titulo">'+iconoBadgeImg("ic-latido.png",20)+'<div class="titulo-txt"><h3>Último control</h3><p class="muted" style="margin:0;">'+esc(formatoFecha(ultimo.fecha))+'</p></div></div>'+
         '<div class="fila-metricas">'+
         '<div class="caja-metrica"><span class="ic">'+imgIcono("ic-latido.png",20)+'</span><div><div class="valor">'+esc(ultimo.sistolica)+'/'+esc(ultimo.diastolica)+'</div><div class="etiqueta">mmHg · Presión arterial</div></div></div>'+
@@ -843,7 +861,13 @@
       '<div class="fila-titulo">'+iconoBadgeImg("ic-qr.png",20)+'<div class="titulo-txt"><h3>Código QR para tu médico</h3></div></div>'+
       '<p class="muted">Genera un código con tu perfil y tus últimos controles para que tu médico lo escanee en la consulta.</p>'+
       (estado.mostrandoQR
-        ? '<div id="qr-contenedor" class="qr-contenedor"></div><p class="muted" style="text-align:center;">Válido con los datos de este momento — vuelve a generarlo si registras un control nuevo.</p><button class="btn-texto" data-accion="ocultar-qr">Ocultar código</button>'
+        ? '<div id="qr-contenedor" class="qr-contenedor"></div><p class="muted" style="text-align:center;">Válido con los datos de este momento — vuelve a generarlo si registras un control nuevo.</p>'+
+          '<div class="btn-fila-compartir">'+
+          '<a class="btn-compartir" href="https://wa.me/?text='+encodeURIComponent("Aquí tienes mi ficha de control prenatal (Mamá Alerta): "+urlDatosQR())+'" target="_blank" rel="noopener">📱 WhatsApp</a>'+
+          '<a class="btn-compartir" href="mailto:?subject='+encodeURIComponent("Mi ficha de control prenatal")+'&body='+encodeURIComponent("Aquí tienes mi ficha de control prenatal (Mamá Alerta): "+urlDatosQR())+'">✉️ Correo</a>'+
+          (typeof navigator!=="undefined" && navigator.share ? '<button type="button" class="btn-compartir" data-accion="compartir-qr-nativo">📤 Compartir</button>' : '')+
+          '</div>'+
+          '<button class="btn-texto" data-accion="ocultar-qr">Ocultar código</button>'
         : '<button class="btn-secundaria con-icono" data-accion="mostrar-qr"><span class="ic-izq">'+imgIcono("ic-qr.png",18)+'</span><span class="txt">Generar código QR</span><span class="ic-der">'+ic("arrowRight",16)+'</span></button>')+
       '</div>';
 
@@ -1159,6 +1183,13 @@
         else if(a==="cancelar-consulta"){ estado.editandoConsulta=false; render(); }
         else if(a==="mostrar-qr"){ estado.mostrandoQR=true; render(); }
         else if(a==="ocultar-qr"){ estado.mostrandoQR=false; render(); }
+        else if(a==="compartir-qr-nativo"){
+          var urlQR = urlDatosQR();
+          var textoQR = "Aquí tienes mi ficha de control prenatal (Mamá Alerta).";
+          if(navigator.share){
+            navigator.share({ title:"Mamá Alerta", text:textoQR, url:urlQR }).catch(function(){});
+          }
+        }
         else if(a==="instalar-app"){
           if(deferredInstallPrompt){
             deferredInstallPrompt.prompt();
