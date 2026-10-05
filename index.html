@@ -483,10 +483,12 @@
     if(sis>=120||dia>=80) return {nivel:2,clave:"n2",etiqueta:"⚠️ Requiere vigilancia",texto:"No confirma un diagnóstico de hipertensión, pero indica la necesidad de vigilancia estrecha, reposo, control de síntomas y reevaluación tensional en las siguientes 24 horas. Acude al médico."};
     return {nivel:1,clave:"n1",etiqueta:"✅ Normal / estable",texto:"Control prenatal de rutina, educación en hábitos saludables y seguimiento del embarazo con tranquilidad."};
   }
-  function clasificarFlor(sintomas,bp){
+  function clasificarFlor(sintomas){
+    // Nivel de riesgo basado ÚNICAMENTE en los síntomas marcados — se
+    // evalúa por separado de la presión arterial, no se combinan en un
+    // solo resultado (cada una es un criterio de triaje independiente).
     var c=0; PREGUNTAS_SINTOMAS.forEach(function(p){ if(sintomas[p.id]==="si") c++; });
     var nivel="bajo"; if(c>=3) nivel="alto"; else if(c>=1) nivel="moderado";
-    if(bp.nivel===3) nivel="alto"; else if(bp.nivel===2 && nivel==="bajo") nivel="moderado";
     var info={ bajo:{emoji:"🌸",nombre:"Bajo riesgo",desc:"Bienestar y control prenatal al día."},
       moderado:{emoji:"🌷",nombre:"Alerta moderada",desc:"Señal de atención en 24 horas. Vigila los síntomas y contacta a tu médico si continúan."},
       alto:{emoji:"🥀",nombre:"Alto riesgo",desc:"Visita al médico para atención inmediata."} };
@@ -580,8 +582,16 @@
     document.getElementById("shell").classList.toggle("sidebar-abierta", !!estado.sidebarAbierta);
     renderSidebar();
     ligarEventos();
-    window.scrollTo(0,0);
+    // Solo subimos al inicio de la página cuando de verdad cambiamos de
+    // pantalla (o de paso dentro del control diario) — NO en cada
+    // respuesta marcada, que solo vuelve a dibujar la misma pantalla.
+    var claveVista = estado.pantalla + (estado.pantalla==="control" ? ":"+estado.controlPaso : "");
+    if(claveVista !== vistaAnteriorParaScroll){
+      window.scrollTo(0,0);
+      vistaAnteriorParaScroll = claveVista;
+    }
   }
+  var vistaAnteriorParaScroll = null;
 
   window.addEventListener("online", render);
   window.addEventListener("offline", render);
@@ -938,7 +948,7 @@
     var p = estado.perfil, cd = estado.controlDatos;
     var sis = Number(cd.sistolica), dia = Number(cd.diastolica);
     var bp = clasificarBP(cd.sistolica, cd.diastolica);
-    var flor = clasificarFlor(cd.sintomas, bp);
+    var flor = clasificarFlor(cd.sintomas);
     var urgentes = urgenciasActivas(cd.urgencia);
     var tieneUrgencia = urgentes.length>0;
     var tieneSensible = urgentes.some(function(p){return p.sensible;});
@@ -1469,7 +1479,7 @@
   function guardarRegistroControl(){
     var cd = estado.controlDatos;
     var bp = clasificarBP(cd.sistolica, cd.diastolica);
-    var flor = clasificarFlor(cd.sintomas, bp);
+    var flor = clasificarFlor(cd.sintomas);
     var urgentes = urgenciasActivas(cd.urgencia);
     var registro = {
       fecha: fechaHoyISO(), sistolica: cd.sistolica, diastolica: cd.diastolica,
